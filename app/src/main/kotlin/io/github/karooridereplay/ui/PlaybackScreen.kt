@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.LinearProgressIndicator
@@ -38,9 +40,14 @@ fun PlaybackScreen(viewModel: ReplayViewModel) {
     val currentRecord by (KarooRideReplayExtension.instance?.replayEngine?.currentRecord
         ?: kotlinx.coroutines.flow.MutableStateFlow<FitRecord?>(null)).collectAsState()
 
+    // Karoo screens are narrow — wrap in scroll so transport buttons stay
+    // reachable when the live-record summary card grows.
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(scrollState)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {

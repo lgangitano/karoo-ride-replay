@@ -4,10 +4,16 @@
     displayName="@string/extension_name"
     icon="@android:drawable/ic_media_play"
     configurable="true"
-    fitFile="false">
+    fitFile="false"
+    scansDevices="true">
 
-    <!-- No DataType entries yet — the extension's role is publishing virtual
-         sensor Devices for the Karoo to pair to, not providing data fields.
-         BonusActions for play/pause may land here in a later iteration. -->
+    <!-- scansDevices="true" is REQUIRED for Karoo OS to invoke startScan()
+         on our service; without it the virtual sensors never appear in the
+         Settings → Sensors → Add Sensor UI. Confirmed by comparing against
+         lockevod/Karoo-KPower's extension_info.xml + Hammerhead's sample
+         extension, both of which declare it. -->
+
+    <!-- No DataType entries — the extension's role is publishing virtual
+         sensor Devices for the Karoo to pair to, not providing data fields. -->
 
 </ExtensionInfo>

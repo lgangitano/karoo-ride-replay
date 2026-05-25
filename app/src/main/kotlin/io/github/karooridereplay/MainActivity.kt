@@ -1,9 +1,13 @@
 package io.github.karooridereplay
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -73,16 +77,45 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun maybeRequestStoragePermission() {
-        // Android 13+ uses scoped storage; READ_EXTERNAL_STORAGE is the path for
-        // older API levels (Karoo OS may still be on a target where this matters).
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            val granted = ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED
-            if (!granted) {
-                requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+        // Karoo's FitFiles/ folder is OUTSIDE this app's scoped-storage sandbox.
+        // On Android 11+ (R+) reading it requires MANAGE_EXTERNAL_STORAGE — the
+        // "All files access" toggle in system Settings. That's a special permission
+        // that can't be granted via the standard runtime-permission flow; the user
+        // has to be sent to the system Settings page for it.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                try {
+                    startActivity(
+                        Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                            data = Uri.parse("package:$packageName")
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        }
+                    )
+                } catch (e: Exception) {
+                    // Fallback to the global "All files access" list — user picks
+                    // our app manually
+                    try {
+                        startActivity(
+                            Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                        )
+                    } catch (_: Exception) {
+                        // Last resort: do nothing. The RideSelectorScreen still shows
+                        // a "Rescan" button so the user can retry once they grant
+                        // access manually.
+                    }
+                }
             }
+            return
+        }
+        // Pre-Android 11: standard runtime READ_EXTERNAL_STORAGE permission.
+        val granted = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!granted) {
+            requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
     }
 }
