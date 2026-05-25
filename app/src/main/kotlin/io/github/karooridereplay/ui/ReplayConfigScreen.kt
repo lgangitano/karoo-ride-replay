@@ -2,11 +2,17 @@ package io.github.karooridereplay.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -18,6 +24,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 
 /**
@@ -38,9 +48,17 @@ fun ReplayConfigScreen(
     var startMinutes by remember { mutableStateOf("0") }
     var startSeconds by remember { mutableStateOf("0") }
 
+    val focusManager = LocalFocusManager.current
+
+    // Karoo screens are narrow vertically; wrap in a scroll so 'Begin playback'
+    // is always reachable. Without this the bottom button gets clipped on the
+    // smaller Karoo 2 / Karoo 3 form factors.
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(scrollState)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -70,38 +88,67 @@ fun ReplayConfigScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // Number keyboard + IME Next action so the rider can type hh →
+            // tap Next → mm → Next → ss → Done without leaving the keypad.
+            val numberOptionsNext = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Next
+            )
+            val numberOptionsDone = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Done
+            )
+            val nextActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Next) }
+            )
+            val doneActions = KeyboardActions(
+                onDone = { focusManager.clearFocus() }
+            )
             OutlinedTextField(
                 value = startHours,
                 onValueChange = { startHours = it.filter(Char::isDigit).take(2) },
                 label = { Text("hh") },
+                keyboardOptions = numberOptionsNext,
+                keyboardActions = nextActions,
+                singleLine = true,
                 modifier = Modifier.weight(1f)
             )
             OutlinedTextField(
                 value = startMinutes,
                 onValueChange = { startMinutes = it.filter(Char::isDigit).take(2) },
                 label = { Text("mm") },
+                keyboardOptions = numberOptionsNext,
+                keyboardActions = nextActions,
+                singleLine = true,
                 modifier = Modifier.weight(1f)
             )
             OutlinedTextField(
                 value = startSeconds,
                 onValueChange = { startSeconds = it.filter(Char::isDigit).take(2) },
                 label = { Text("ss") },
+                keyboardOptions = numberOptionsDone,
+                keyboardActions = doneActions,
+                singleLine = true,
                 modifier = Modifier.weight(1f)
             )
         }
 
         Text("Playback speed: %.1f×".format(playbackSpeed),
             style = MaterialTheme.typography.titleMedium)
+        // Compact buttons — the default Button content-padding is too wide
+        // for four entries in a Karoo-narrow row; "10×" was being clipped.
+        val compactPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             listOf(1.0, 2.0, 5.0, 10.0).forEach { multiplier ->
                 Button(
                     onClick = { viewModel.setSpeed(multiplier) },
+                    contentPadding = compactPadding,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("${multiplier.toInt()}×")
+                    Text("${multiplier.toInt()}x")
                 }
             }
         }
