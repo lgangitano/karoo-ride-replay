@@ -44,6 +44,16 @@ android {
         compose = true
         buildConfig = true
     }
+
+    // We deliberately request ACCESS_MOCK_LOCATION in the main manifest, NOT
+    // in src/debug/. The whole purpose of this extension is to provide mock
+    // GPS data — it IS the feature, not a debugging shortcut. The standard
+    // lint rule assumes mock-location permission is only ever for tests; we
+    // suppress that rule rather than ship a debug-only APK no rider could
+    // use.
+    lint {
+        disable += "MockLocation"
+    }
 }
 
 dependencies {
