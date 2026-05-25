@@ -72,7 +72,8 @@ dependencies {
     // Navigation (for the simple multi-screen UI)
     implementation("androidx.navigation:navigation-compose:2.8.5")
 
-    // FIT parsing — Garmin's open FIT SDK published to Maven Central.
-    // Records, GPS coords, power, HR, cadence, speed at 1 Hz.
-    implementation("com.garmin.fit:fit:21.158.0")
+    // FIT parsing — Garmin's official open FIT SDK, published to Maven
+    // Central. Records, GPS coords, power, HR, cadence, speed at 1 Hz.
+    // https://central.sonatype.com/artifact/com.garmin/fit
+    implementation("com.garmin:fit:21.205.0")
 }
