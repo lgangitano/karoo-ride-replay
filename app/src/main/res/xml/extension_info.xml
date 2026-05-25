@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ExtensionInfo
+    id="ride-replay"
+    displayName="@string/extension_name"
+    icon="@android:drawable/ic_media_play"
+    configurable="true"
+    fitFile="false">
+
+    <!-- No DataType entries yet — the extension's role is publishing virtual
+         sensor Devices for the Karoo to pair to, not providing data fields.
+         BonusActions for play/pause may land here in a later iteration. -->
+
+</ExtensionInfo>
