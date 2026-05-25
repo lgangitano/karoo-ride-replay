@@ -1,5 +1,7 @@
 package io.github.karooridereplay.ui
 
+import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.karooridereplay.extension.KarooRideReplayExtension
@@ -44,6 +47,19 @@ fun PlaybackScreen(viewModel: ReplayViewModel) {
     // reachable when the live-record summary card grows.
     val scrollState = rememberScrollState()
 
+    // Back-button handling on PlaybackScreen: instead of popping the NavHost
+    // (which would walk us back through ConfigScreen -> RideSelectorScreen
+    // and force re-picking the ride on next entry), we minimize the activity
+    // via moveTaskToBack. The KarooRideReplayExtension service keeps running
+    // — playback continues, virtual sensors keep emitting, mock GPS keeps
+    // streaming. The rider lands on the Karoo home and can swipe straight
+    // into a ride profile to watch 7Climb / other fields react to the
+    // replay. On re-open, the app comes back exactly where it was.
+    val activity = LocalContext.current as? Activity
+    BackHandler(enabled = activity != null) {
+        activity?.moveTaskToBack(true)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -51,7 +67,16 @@ fun PlaybackScreen(viewModel: ReplayViewModel) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("Replay", style = MaterialTheme.typography.titleLarge)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        ) {
+            Text("Replay", style = MaterialTheme.typography.titleLarge)
+            OutlinedButton(onClick = { activity?.moveTaskToBack(true) }) {
+                Text("To ride →")
+            }
+        }
 
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(12.dp)) {
