@@ -68,7 +68,13 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("playback") {
-                            PlaybackScreen(viewModel = viewModel)
+                            PlaybackScreen(
+                                viewModel = viewModel,
+                                onBack = {
+                                    viewModel.stop()
+                                    nav.popBackStack("rides", inclusive = false)
+                                }
+                            )
                         }
                     }
                 }

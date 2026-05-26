@@ -32,9 +32,15 @@ import io.github.karooridereplay.replay.ReplayEngine
  * Active playback control: play / pause / stop / scrub + live record summary.
  * The record summary is the immediate feedback loop — riders can see whether
  * the FIT's values look sensible before they start trusting the simulator.
+ *
+ * The two "exit" paths are deliberately distinct:
+ *  - System back gesture → [onBack]: stop the engine and pop the nav stack
+ *    back to the ride picker, so the rider can choose a different FIT.
+ *  - "To ride →" button → minimize-while-playing via moveTaskToBack, so the
+ *    rider lands on the Karoo home with the simulator still streaming.
  */
 @Composable
-fun PlaybackScreen(viewModel: ReplayViewModel) {
+fun PlaybackScreen(viewModel: ReplayViewModel, onBack: () -> Unit) {
     val state by viewModel.state.collectAsState()
     val progress by viewModel.progress.collectAsState()
     val elapsedSeconds by viewModel.elapsedSeconds.collectAsState()
@@ -47,18 +53,11 @@ fun PlaybackScreen(viewModel: ReplayViewModel) {
     // reachable when the live-record summary card grows.
     val scrollState = rememberScrollState()
 
-    // Back-button handling on PlaybackScreen: instead of popping the NavHost
-    // (which would walk us back through ConfigScreen -> RideSelectorScreen
-    // and force re-picking the ride on next entry), we minimize the activity
-    // via moveTaskToBack. The KarooRideReplayExtension service keeps running
-    // — playback continues, virtual sensors keep emitting, mock GPS keeps
-    // streaming. The rider lands on the Karoo home and can swipe straight
-    // into a ride profile to watch 7Climb / other fields react to the
-    // replay. On re-open, the app comes back exactly where it was.
+    // System back: return to the ride picker so the rider can choose a
+    // different FIT. The "To ride →" button (below) still calls
+    // moveTaskToBack for the keep-playing-and-minimize path.
     val activity = LocalContext.current as? Activity
-    BackHandler(enabled = activity != null) {
-        activity?.moveTaskToBack(true)
-    }
+    BackHandler { onBack() }
 
     Column(
         modifier = Modifier

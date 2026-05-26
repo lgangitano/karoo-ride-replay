@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  karoo-ride-replay PlaybackScreen mockup
+  Dimensions: 480 × 800 (Karoo 3 native resolution)
+  Sample data: simulated mid-ride playback (Stelvio coords, climbing values)
+  Layout mirrors the actual Compose source in
+    app/src/main/kotlin/io/github/karooridereplay/ui/PlaybackScreen.kt
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="800" viewBox="0 0 480 800"
+     font-family="Roboto, system-ui, -apple-system, sans-serif">
+
+  <!-- Background (Karoo dark theme convention) -->
+  <rect width="480" height="800" fill="#121212"/>
+
+  <!-- Status bar (Android status strip) -->
+  <rect x="0" y="0" width="480" height="24" fill="#000000"/>
+  <text x="16" y="17" fill="#FFFFFF" font-size="11" font-weight="500">10:42</text>
+  <g transform="translate(420 6)">
+    <!-- battery -->
+    <rect x="32" y="4" width="22" height="10" rx="2" fill="none" stroke="#FFFFFF" stroke-width="1"/>
+    <rect x="34" y="6" width="14" height="6" fill="#FFFFFF"/>
+    <rect x="54" y="7" width="2" height="4" fill="#FFFFFF"/>
+    <!-- signal -->
+    <rect x="2" y="11" width="3" height="3" fill="#FFFFFF"/>
+    <rect x="7" y="8" width="3" height="6" fill="#FFFFFF"/>
+    <rect x="12" y="5" width="3" height="9" fill="#FFFFFF"/>
+    <rect x="17" y="2" width="3" height="12" fill="#FFFFFF"/>
+  </g>
+
+  <!-- ─── Header row: title + "To ride →" button ─── -->
+  <g transform="translate(16 24)">
+    <text x="0" y="44" fill="#FFFFFF" font-size="26" font-weight="500">Replay</text>
+    <g transform="translate(310 16)">
+      <rect width="138" height="40" rx="20" fill="none" stroke="#4CAF50" stroke-width="1.5"/>
+      <text x="69" y="26" fill="#4CAF50" font-size="14" font-weight="500" text-anchor="middle">To ride →</text>
+    </g>
+  </g>
+
+  <!-- ─── Status card ─── -->
+  <g transform="translate(16 96)">
+    <rect width="448" height="116" rx="12" fill="#1E1E1E" stroke="#2A2A2A" stroke-width="1"/>
+    <g transform="translate(16 16)">
+      <text x="0" y="18" fill="#FFFFFF" font-size="16" font-weight="500">Status: PLAYING — 2x</text>
+      <text x="0" y="50" fill="#E0E0E0" font-size="22" font-weight="400">1:24:35 / 2:47:12</text>
+      <!-- progress bar -->
+      <g transform="translate(0 64)">
+        <rect width="416" height="4" rx="2" fill="#2C2C2C"/>
+        <rect width="208" height="4" rx="2" fill="#4CAF50"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ─── Current record card ─── -->
+  <g transform="translate(16 232)">
+    <rect width="448" height="252" rx="12" fill="#1E1E1E" stroke="#2A2A2A" stroke-width="1"/>
+    <g transform="translate(16 16)">
+      <text x="0" y="18" fill="#FFFFFF" font-size="16" font-weight="500">Current record</text>
+
+      <g transform="translate(0 36)" font-size="14">
+        <!-- Position -->
+        <text x="0"   y="14" fill="#BDBDBD">Position</text>
+        <text x="416" y="14" fill="#FFFFFF" text-anchor="end">46.52830, 10.45330</text>
+        <!-- Altitude -->
+        <text x="0"   y="46" fill="#BDBDBD">Altitude</text>
+        <text x="416" y="46" fill="#FFFFFF" text-anchor="end">1745.2 m</text>
+        <!-- Speed -->
+        <text x="0"   y="78" fill="#BDBDBD">Speed</text>
+        <text x="416" y="78" fill="#FFFFFF" text-anchor="end">3.8 m/s (13.7 km/h)</text>
+        <!-- Power -->
+        <text x="0"   y="110" fill="#BDBDBD">Power</text>
+        <text x="416" y="110" fill="#FFFFFF" font-weight="500" text-anchor="end">268 W</text>
+        <!-- HR -->
+        <text x="0"   y="142" fill="#BDBDBD">Heart rate</text>
+        <text x="416" y="142" fill="#FFFFFF" text-anchor="end">162 bpm</text>
+        <!-- Cadence -->
+        <text x="0"   y="174" fill="#BDBDBD">Cadence</text>
+        <text x="416" y="174" fill="#FFFFFF" text-anchor="end">84 rpm</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ─── Scrub section ─── -->
+  <g transform="translate(16 504)">
+    <text x="0" y="16" fill="#FFFFFF" font-size="16" font-weight="500">Scrub</text>
+    <!-- slider -->
+    <g transform="translate(0 36)">
+      <rect width="448" height="4" rx="2" fill="#2C2C2C"/>
+      <rect width="224" height="4" rx="2" fill="#4CAF50"/>
+      <circle cx="224" cy="2" r="10" fill="#4CAF50"/>
+    </g>
+  </g>
+
+  <!-- ─── Transport row: Pause / Stop ─── -->
+  <g transform="translate(16 600)">
+    <g transform="translate(0 0)">
+      <rect width="218" height="56" rx="12" fill="none" stroke="#4CAF50" stroke-width="1.5"/>
+      <text x="109" y="36" fill="#4CAF50" font-size="18" font-weight="500" text-anchor="middle">Pause</text>
+    </g>
+    <g transform="translate(230 0)">
+      <rect width="218" height="56" rx="12" fill="none" stroke="#9E9E9E" stroke-width="1.5"/>
+      <text x="109" y="36" fill="#9E9E9E" font-size="18" font-weight="500" text-anchor="middle">Stop</text>
+    </g>
+  </g>
+
+  <!-- ─── Faint app branding watermark at bottom ─── -->
+  <text x="240" y="785" fill="#5A5A5A" font-size="10" text-anchor="middle">Karoo Ride Replay v0.1.0-alpha</text>
+</svg>

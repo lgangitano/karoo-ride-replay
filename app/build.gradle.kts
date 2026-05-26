@@ -10,7 +10,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "io.github.karooridereplay"
+        applicationId = "it.gangitano.karooridereplay"
         minSdk = 23
         targetSdk = 35
         versionCode = 1

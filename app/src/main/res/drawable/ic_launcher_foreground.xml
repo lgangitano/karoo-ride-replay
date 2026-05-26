@@ -1,0 +1,51 @@
+<!--
+  karoo-ride-replay launcher-icon foreground (Material adaptive icon).
+  Canvas is 108dp × 108dp; the visible-on-all-mask area is the inner 66dp
+  circle (radius 33dp at center 54,54). Anything outside that may be
+  clipped depending on the device's mask shape, so the active mark stays
+  well within the safe zone.
+
+  Mark: a 320° clockwise replay-arrow loop ending in a triangular head,
+  in Karoo green, with a small climb-chevron (an upward angle) inside.
+  Replay semantic comes from the looping arrow; the chevron is a quiet
+  hint that this replays *rides*, not generic media.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Replay-arrow loop: 320° of a 26-radius circle centered at (54,54).
+         Starts top-right, sweeps clockwise, leaves a small gap top-left
+         where the arrowhead lives. -->
+    <path
+        android:strokeColor="#4CAF50"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M 71.06 35.06
+                           A 26 26 0 1 1 41.42 32.71" />
+
+    <!-- Arrowhead at the loop's "start" pointing into the gap.
+         Tip at (41.42, 32.71); base at ~ (49, 28) opening leftward-up. -->
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M 41.42 32.71
+                           L 52 26.0
+                           L 50.5 38.6
+                           Z" />
+
+    <!-- Climb chevron inside the loop — a small upward-angled stroke
+         suggesting an elevation profile, the 'ride' cue. -->
+    <path
+        android:strokeColor="#E8F5E9"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M 41 64
+                           L 51 56
+                           L 60 60
+                           L 67 49" />
+</vector>
