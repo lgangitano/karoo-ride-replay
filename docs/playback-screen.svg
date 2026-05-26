@@ -4,7 +4,7 @@
   Dimensions: 480 × 800 (Karoo 3 native resolution)
   Sample data: simulated mid-ride playback (Stelvio coords, climbing values)
   Layout mirrors the actual Compose source in
-    app/src/main/kotlin/io/github/karooridereplay/ui/PlaybackScreen.kt
+    app/src/main/kotlin/it/gangitano/karooridereplay/ui/PlaybackScreen.kt
 -->
 <svg xmlns="http://www.w3.org/2000/svg" width="480" height="800" viewBox="0 0 480 800"
      font-family="Roboto, system-ui, -apple-system, sans-serif">
