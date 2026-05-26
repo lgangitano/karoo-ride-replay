@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Karoo deep-blue dark, matching the device's home-screen contrast. -->
-    <color name="ic_launcher_background">#0E1A2E</color>
+    <!-- Fully transparent — the launcher fills behind the foreground.
+         Foreground colors (loop + chevron) are chosen to read on both
+         light and tinted backgrounds; pure-dark launchers may flatten
+         the deep-green chevron, accepted trade. -->
+    <color name="ic_launcher_background">#00000000</color>
 </resources>

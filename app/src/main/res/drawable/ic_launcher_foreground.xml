@@ -37,9 +37,11 @@
                            Z" />
 
     <!-- Climb chevron inside the loop — a small upward-angled stroke
-         suggesting an elevation profile, the 'ride' cue. -->
+         suggesting an elevation profile, the 'ride' cue. Deep green so it
+         keeps contrast on the light or system-tinted backgrounds the
+         transparent adaptive-icon background lets through. -->
     <path
-        android:strokeColor="#E8F5E9"
+        android:strokeColor="#2E7D32"
         android:strokeWidth="4"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
