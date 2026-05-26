@@ -1,13 +1,13 @@
-package io.github.karooridereplay.ui
+package it.gangitano.karooridereplay.ui
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.karooridereplay.data.FitFileRepository
-import io.github.karooridereplay.data.FitFileRepository.FitFileEntry
-import io.github.karooridereplay.extension.KarooRideReplayExtension
-import io.github.karooridereplay.replay.FitParser
-import io.github.karooridereplay.replay.ReplayEngine
+import it.gangitano.karooridereplay.data.FitFileRepository
+import it.gangitano.karooridereplay.data.FitFileRepository.FitFileEntry
+import it.gangitano.karooridereplay.extension.KarooRideReplayExtension
+import it.gangitano.karooridereplay.replay.FitParser
+import it.gangitano.karooridereplay.replay.ReplayEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

@@ -1,4 +1,4 @@
-package io.github.karooridereplay.ui
+package it.gangitano.karooridereplay.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,7 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import io.github.karooridereplay.data.FitFileRepository.FitFileEntry
+import it.gangitano.karooridereplay.data.FitFileRepository.FitFileEntry
 
 /**
  * Lists FIT files found on the Karoo's storage. Tap a row to select it for

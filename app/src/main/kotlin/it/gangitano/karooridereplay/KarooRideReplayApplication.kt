@@ -1,4 +1,4 @@
-package io.github.karooridereplay
+package it.gangitano.karooridereplay
 
 import android.app.Application
 

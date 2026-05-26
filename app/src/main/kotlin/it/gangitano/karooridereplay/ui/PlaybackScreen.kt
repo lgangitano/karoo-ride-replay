@@ -1,4 +1,4 @@
-package io.github.karooridereplay.ui
+package it.gangitano.karooridereplay.ui
 
 import android.app.Activity
 import androidx.activity.compose.BackHandler
@@ -24,9 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import io.github.karooridereplay.extension.KarooRideReplayExtension
-import io.github.karooridereplay.replay.FitRecord
-import io.github.karooridereplay.replay.ReplayEngine
+import it.gangitano.karooridereplay.extension.KarooRideReplayExtension
+import it.gangitano.karooridereplay.replay.FitRecord
+import it.gangitano.karooridereplay.replay.ReplayEngine
 
 /**
  * Active playback control: play / pause / stop / scrub + live record summary.

@@ -1,12 +1,12 @@
-package io.github.karooridereplay.extension
+package it.gangitano.karooridereplay.extension
 
-import io.github.karooridereplay.mocklocation.MockLocationProvider
-import io.github.karooridereplay.replay.ReplayEngine
-import io.github.karooridereplay.vdevice.VirtualCadenceSource
-import io.github.karooridereplay.vdevice.VirtualHrSource
-import io.github.karooridereplay.vdevice.VirtualPowerSource
-import io.github.karooridereplay.vdevice.VirtualReplaySource
-import io.github.karooridereplay.vdevice.VirtualSpeedSource
+import it.gangitano.karooridereplay.mocklocation.MockLocationProvider
+import it.gangitano.karooridereplay.replay.ReplayEngine
+import it.gangitano.karooridereplay.vdevice.VirtualCadenceSource
+import it.gangitano.karooridereplay.vdevice.VirtualHrSource
+import it.gangitano.karooridereplay.vdevice.VirtualPowerSource
+import it.gangitano.karooridereplay.vdevice.VirtualReplaySource
+import it.gangitano.karooridereplay.vdevice.VirtualSpeedSource
 import io.hammerhead.karooext.extension.DataTypeImpl
 import io.hammerhead.karooext.extension.KarooExtension
 import io.hammerhead.karooext.internal.Emitter

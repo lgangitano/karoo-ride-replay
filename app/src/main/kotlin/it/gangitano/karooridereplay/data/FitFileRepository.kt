@@ -1,4 +1,4 @@
-package io.github.karooridereplay.data
+package it.gangitano.karooridereplay.data
 
 import android.content.Context
 import android.os.Environment

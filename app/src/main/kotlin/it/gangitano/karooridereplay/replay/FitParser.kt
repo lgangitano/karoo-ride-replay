@@ -1,4 +1,4 @@
-package io.github.karooridereplay.replay
+package it.gangitano.karooridereplay.replay
 
 import com.garmin.fit.Decode
 import com.garmin.fit.FitDecoder

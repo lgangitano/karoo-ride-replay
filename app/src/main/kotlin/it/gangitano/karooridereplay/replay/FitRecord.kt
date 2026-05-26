@@ -1,4 +1,4 @@
-package io.github.karooridereplay.replay
+package it.gangitano.karooridereplay.replay
 
 /**
  * One row of recorded ride data, lifted out of a FIT file's `record` message.

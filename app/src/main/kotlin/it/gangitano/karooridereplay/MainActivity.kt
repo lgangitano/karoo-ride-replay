@@ -1,4 +1,4 @@
-package io.github.karooridereplay
+package it.gangitano.karooridereplay
 
 import android.Manifest
 import android.content.Intent
@@ -19,17 +19,17 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import io.github.karooridereplay.ui.PlaybackScreen
-import io.github.karooridereplay.ui.ReplayConfigScreen
-import io.github.karooridereplay.ui.ReplayViewModel
-import io.github.karooridereplay.ui.RideSelectorScreen
+import it.gangitano.karooridereplay.ui.PlaybackScreen
+import it.gangitano.karooridereplay.ui.ReplayConfigScreen
+import it.gangitano.karooridereplay.ui.ReplayViewModel
+import it.gangitano.karooridereplay.ui.RideSelectorScreen
 
 /**
  * Single-activity host for the three Compose screens: ride picker → replay
  * config → playback control. ViewModel scoped to the activity so all three
  * screens share the same state.
  *
- * On launch, requests storage-read permission so [io.github.karooridereplay
+ * On launch, requests storage-read permission so [it.gangitano.karooridereplay
  * .data.FitFileRepository] can scan the Karoo's `FitFiles/` folder.
  */
 class MainActivity : ComponentActivity() {

@@ -1,4 +1,4 @@
-package io.github.karooridereplay.mocklocation
+package it.gangitano.karooridereplay.mocklocation
 
 import android.content.Context
 import android.location.Criteria
@@ -7,8 +7,8 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.SystemClock
 import android.util.Log
-import io.github.karooridereplay.replay.FitRecord
-import io.github.karooridereplay.replay.ReplayEngine
+import it.gangitano.karooridereplay.replay.FitRecord
+import it.gangitano.karooridereplay.replay.ReplayEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

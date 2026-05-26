@@ -1,4 +1,4 @@
-package io.github.karooridereplay.ui
+package it.gangitano.karooridereplay.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

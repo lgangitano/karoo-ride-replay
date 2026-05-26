@@ -1,7 +1,7 @@
-package io.github.karooridereplay.vdevice
+package it.gangitano.karooridereplay.vdevice
 
-import io.github.karooridereplay.replay.FitRecord
-import io.github.karooridereplay.replay.ReplayEngine
+import it.gangitano.karooridereplay.replay.FitRecord
+import it.gangitano.karooridereplay.replay.ReplayEngine
 import io.hammerhead.karooext.models.DataType
 
 /**

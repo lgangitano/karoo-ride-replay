@@ -1,4 +1,4 @@
-package io.github.karooridereplay.replay
+package it.gangitano.karooridereplay.replay
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
