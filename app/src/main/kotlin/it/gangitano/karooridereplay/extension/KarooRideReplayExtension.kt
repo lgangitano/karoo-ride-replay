@@ -32,7 +32,7 @@ import kotlinx.coroutines.launch
  *     when the user activates it.
  *
  * Other components access the running extension via the [instance]
- * companion (mirrors the pattern 7climb uses for its ClimbIntelligenceExtension).
+ * companion (the common Karoo-extension singleton pattern).
  */
 class KarooRideReplayExtension : KarooExtension(EXTENSION_ID, "0.1.0-alpha") {
 
@@ -85,7 +85,7 @@ class KarooRideReplayExtension : KarooExtension(EXTENSION_ID, "0.1.0-alpha") {
 
         /**
          * The running extension instance. UI binds to this for play/pause/seek
-         * control. Mirrors 7climb's ClimbIntelligenceExtension.instance pattern.
+         * control. (Standard Karoo-extension singleton pattern.)
          */
         @Volatile
         var instance: KarooRideReplayExtension? = null

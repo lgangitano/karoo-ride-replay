@@ -10,7 +10,7 @@ Open-source ride-simulation extension for Hammerhead Karoo cycling computers. Re
 
 ## Why
 
-Karoo extension development needs ride data. There's no Hammerhead-provided way to test extensions against meaningful sensor + GPS input without an actual ride. `karoo-ride-replay` fills that gap by playing back a real recorded ride from FIT — GPS, power, heart rate, cadence, speed, altitude, all at the original timing — so any other extension (7Climb, KPower, Wattramp, anything else) sees the data as if you were on the bike.
+Karoo extension development needs ride data. There's no Hammerhead-provided way to test extensions against meaningful sensor + GPS input without an actual ride. `karoo-ride-replay` fills that gap by playing back a real recorded ride from FIT — GPS, power, heart rate, cadence, speed, altitude, all at the original timing — so any other extension (KPower, Wattramp, or any sensor/GPS-consuming extension) sees the data as if you were on the bike.
 
 ## Install on Karoo 3
 

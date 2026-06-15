@@ -57,8 +57,8 @@ android {
 }
 
 dependencies {
-    // Karoo Extension SDK — 1.1.8 to access the same CLIMB / NavigationState
-    // APIs we're testing 7climb against.
+    // Karoo Extension SDK — 1.1.8 for the CLIMB / NavigationState APIs that
+    // consumer extensions are tested against.
     implementation("io.hammerhead:karoo-ext:1.1.8")
 
     // Kotlin
