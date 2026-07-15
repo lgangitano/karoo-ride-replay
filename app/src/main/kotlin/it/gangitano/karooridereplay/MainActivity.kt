@@ -15,19 +15,20 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import it.gangitano.karooridereplay.ui.PlaybackScreen
-import it.gangitano.karooridereplay.ui.ReplayConfigScreen
 import it.gangitano.karooridereplay.ui.ReplayViewModel
 import it.gangitano.karooridereplay.ui.RideSelectorScreen
+import it.gangitano.karooridereplay.ui.theme.KarooTheme
 
 /**
- * Single-activity host for the three Compose screens: ride picker → replay
- * config → playback control. ViewModel scoped to the activity so all three
- * screens share the same state.
+ * Single-activity host for the two Compose screens: ride picker → playback
+ * control (the former replay-config step is folded into playback). ViewModel
+ * scoped to the activity so both screens share the same state.
  *
  * On launch, requests storage-read permission so [it.gangitano.karooridereplay
  * .data.FitFileRepository] can scan the Karoo's `FitFiles/` folder.
@@ -45,37 +46,44 @@ class MainActivity : ComponentActivity() {
         maybeRequestStoragePermission()
 
         setContent {
-            MaterialTheme {
+            KarooTheme {
                 Surface(
                     modifier = androidx.compose.ui.Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val nav = rememberNavController()
+                    // Two screens now: pick a ride → replay it. The former
+                    // "Configure replay" step is folded into PlaybackScreen.
                     NavHost(navController = nav, startDestination = "rides") {
                         composable("rides") {
                             RideSelectorScreen(
                                 viewModel = viewModel,
                                 onRideSelected = {
                                     viewModel.selectRide(it)
-                                    nav.navigate("config")
+                                    nav.navigate("playback")
                                 }
-                            )
-                        }
-                        composable("config") {
-                            ReplayConfigScreen(
-                                viewModel = viewModel,
-                                onBeginPlayback = { nav.navigate("playback") }
                             )
                         }
                         composable("playback") {
                             PlaybackScreen(
                                 viewModel = viewModel,
                                 onBack = {
-                                    viewModel.stop()
+                                    // Pause (not stop): keep the replay position so
+                                    // re-selecting the same ride reopens where it was,
+                                    // instead of snapping to 0:00. Streaming halts.
+                                    viewModel.pause()
                                     nav.popBackStack("rides", inclusive = false)
                                 }
                             )
                         }
+                    }
+                    // Reopened (e.g. Extensions → Open) while a replay is still
+                    // live in the extension service: jump straight to playback so
+                    // the running ride survives the fresh Activity instead of
+                    // dropping the user on an empty picker. "rides" stays the root
+                    // so Back still returns to the picker.
+                    LaunchedEffect(Unit) {
+                        if (viewModel.hasActiveRide()) nav.navigate("playback")
                     }
                 }
             }

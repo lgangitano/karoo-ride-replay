@@ -51,6 +51,14 @@ class ReplayEngine {
     private val _playbackSpeed = MutableStateFlow(1.0)
     val playbackSpeed: StateFlow<Double> = _playbackSpeed.asStateFlow()
 
+    /** Bookmark times (elapsed seconds from ride start), ascending as added. */
+    private val _markers = MutableStateFlow<List<Long>>(emptyList())
+    val markers: StateFlow<List<Long>> = _markers.asStateFlow()
+
+    /** When true and ≥2 markers exist, playback loops between the outer two. */
+    private val _loop = MutableStateFlow(false)
+    val loop: StateFlow<Boolean> = _loop.asStateFlow()
+
     private var samples: List<FitRecord> = emptyList()
     private var rideStartMs: Long = 0L
     private var rideEndMs: Long = 0L
@@ -83,6 +91,9 @@ class ReplayEngine {
         _progress.value = 0.0
         _elapsedSeconds.value = 0L
         _state.value = State.IDLE
+        // Markers are per-ride; a fresh ride starts with none.
+        _markers.value = emptyList()
+        _loop.value = false
     }
 
     /**
@@ -93,13 +104,15 @@ class ReplayEngine {
     fun play() {
         if (samples.isEmpty() || _state.value == State.PLAYING) return
         if (currentIndex >= samples.lastIndex) {
-            // At the end already — restart from the beginning rather than no-op
-            currentIndex = 0
-            _currentRecord.value = samples.firstOrNull()
+            // seek() preserves the existing seek semantics and emits immediately,
+            // so observers never retain the finished position until the first tick.
+            seek(restartElapsedSeconds(_markers.value, _loop.value))
         }
         _state.value = State.PLAYING
         playbackJob?.cancel()
         playbackJob = scope.launch {
+            // Intentionally no wall-clock timeout: the loaded ride's recorded gaps
+            // and selected speed define playback duration. pause/stop/destroy cancel it.
             while (isActive && currentIndex < samples.lastIndex) {
                 val current = samples[currentIndex]
                 val next = samples[currentIndex + 1]
@@ -109,6 +122,10 @@ class ReplayEngine {
                 if (_state.value != State.PLAYING) break
                 currentIndex++
                 emitCurrent()
+                // Loop-between-markers: when enabled with ≥2 markers, jump back
+                // to the lower marker the moment we reach the upper one.
+                loopWrapTarget(_elapsedSeconds.value, _markers.value, _loop.value)
+                    ?.let { seek(it) }
             }
             if (currentIndex >= samples.lastIndex && _state.value == State.PLAYING) {
                 _state.value = State.FINISHED
@@ -140,6 +157,14 @@ class ReplayEngine {
      */
     fun seek(elapsedSeconds: Long) {
         if (samples.isEmpty()) return
+        // Seeking OUT of the loop window exits loop mode, so the user can always
+        // scrub past the markers. Without this, an active loop yanks the position
+        // back to the lower marker the instant it reaches the upper one, making
+        // the slider feel "stuck" between the two marks. The loop's own internal
+        // wrap targets the lower marker (inside the window), so it never trips this.
+        if (_loop.value && seekExitsLoop(elapsedSeconds, _markers.value)) {
+            _loop.value = false
+        }
         val targetMs = rideStartMs + elapsedSeconds.coerceAtLeast(0L) * 1000L
         currentIndex = findIndexAtOrAfter(targetMs).coerceIn(0, samples.lastIndex)
         emitCurrent()
@@ -148,6 +173,29 @@ class ReplayEngine {
     /** Set the playback multiplier (e.g., 1.0, 2.0, 5.0, 10.0). Coerced to a sane range. */
     fun setSpeed(multiplier: Double) {
         _playbackSpeed.value = multiplier.coerceIn(0.1, 100.0)
+    }
+
+    /** Drop a bookmark at the current elapsed position (kept sorted, de-duplicated). */
+    fun addMarker() {
+        if (samples.isEmpty()) return
+        val at = _elapsedSeconds.value
+        if (_markers.value.contains(at)) return
+        _markers.value = (_markers.value + at).sorted()
+    }
+
+    /** Remove all bookmarks and turn loop off. */
+    fun clearMarkers() {
+        _markers.value = emptyList()
+        _loop.value = false
+    }
+
+    /** Toggle loop. No-op unless ≥2 markers exist (nothing to loop between). */
+    fun toggleLoop() {
+        if (_markers.value.size < 2) {
+            _loop.value = false
+            return
+        }
+        _loop.value = !_loop.value
     }
 
     /** Cancel all coroutines. Call on extension shutdown. */
@@ -178,5 +226,51 @@ class ReplayEngine {
             if (samples[mid].timestampMs < targetMs) lo = mid + 1 else hi = mid
         }
         return lo
+    }
+
+    companion object {
+        /**
+         * Elapsed-time target used when [play] is invoked from the end of a ride.
+         * An active loop restarts at its lower marker; all other cases restart at 0.
+         */
+        fun restartElapsedSeconds(markers: List<Long>, loop: Boolean): Long {
+            if (!loop || markers.size < 2) return 0L
+            return markers.minOrNull() ?: 0L
+        }
+
+        /**
+         * The loop-between-markers decision, kept pure so it can be unit-tested
+         * without the playback coroutine.
+         *
+         * Returns the elapsed-seconds offset to jump back to (the lower of the
+         * outer two markers) when looping is active, at least two distinct
+         * markers exist, and playback has reached the upper marker. Returns
+         * `null` otherwise — meaning "keep advancing normally."
+         *
+         * With more than two markers we loop the whole span (min..max); the
+         * handoff's "loops between the two" describes the intended two-marker
+         * case, and the span is the natural generalization.
+         */
+        fun loopWrapTarget(elapsedSeconds: Long, markers: List<Long>, loop: Boolean): Long? {
+            if (!loop || markers.size < 2) return null
+            val lower = markers.minOrNull() ?: return null
+            val upper = markers.maxOrNull() ?: return null
+            if (lower >= upper) return null
+            return if (elapsedSeconds >= upper) lower else null
+        }
+
+        /**
+         * True when a seek to [elapsedSeconds] lands OUTSIDE the marker window
+         * (before the lower marker or after the upper one) — the signal that the
+         * user is scrubbing out of the loop and wants loop mode to release.
+         * The window is inclusive, so the loop's own wrap to the lower marker
+         * does not count as exiting.
+         */
+        fun seekExitsLoop(elapsedSeconds: Long, markers: List<Long>): Boolean {
+            if (markers.size < 2) return false
+            val lower = markers.minOrNull() ?: return false
+            val upper = markers.maxOrNull() ?: return false
+            return elapsedSeconds < lower || elapsedSeconds > upper
+        }
     }
 }

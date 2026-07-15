@@ -86,4 +86,7 @@ dependencies {
     // Central. Records, GPS coords, power, HR, cadence, speed at 1 Hz.
     // https://central.sonatype.com/artifact/com.garmin/fit
     implementation("com.garmin:fit:21.205.0")
+
+    // JVM unit tests (engine loop-wrap logic).
+    testImplementation("junit:junit:4.13.2")
 }

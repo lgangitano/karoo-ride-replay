@@ -11,3 +11,7 @@ captures
 /app/release
 /app/debug
 .DS_Store
+
+# Local working notes — kept out of the public repo.
+ISA.md
+CLAUDE.md

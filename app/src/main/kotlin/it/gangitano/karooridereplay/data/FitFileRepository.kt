@@ -58,6 +58,12 @@ class FitFileRepository(private val context: Context) {
             .filter { it.exists() && it.isDirectory }
             .flatMap { dir -> dir.walkTopDown().take(MAX_FILES_PER_DIR) }
             .filter { it.isFile && it.extension.equals("fit", ignoreCase = true) }
+            // Hide near-empty recordings — a FIT with too little data to be a
+            // useful replay (aborted/quick test recordings leave a tiny stub).
+            // Size is a cheap, stable proxy: empty stubs are ~1 KB while the
+            // smallest genuine ride observed is ~27 KB, so this floor only ever
+            // drops files with no real ride in them, never a large one.
+            .filter { it.length() >= MIN_RIDE_BYTES }
             .distinctBy { it.absolutePath }
             .map {
                 FitFileEntry(
@@ -74,6 +80,13 @@ class FitFileRepository(private val context: Context) {
     companion object {
         /** Cap so a runaway directory traversal doesn't stall the UI thread. */
         private const val MAX_FILES_PER_DIR = 500
+
+        /**
+         * Minimum FIT size to be listed as a ride. Below this a file has too
+         * little data to replay usefully (empty/aborted recordings). Tunable:
+         * raise it to hide more marginal recordings, lower it to show more.
+         */
+        private const val MIN_RIDE_BYTES = 10 * 1024L
         private val DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
     }
 }
