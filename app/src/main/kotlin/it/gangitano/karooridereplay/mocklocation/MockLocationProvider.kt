@@ -14,6 +14,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -51,6 +53,8 @@ class MockLocationProvider(
 
     companion object {
         private const val TAG = "MockLocationProvider"
+        /** How often the heartbeat re-publishes the held fix when the stream is quiet. */
+        private const val HEARTBEAT_MS = 1_000L
         private const val EARTH_RADIUS_M = 6_371_000.0
         private const val DEFAULT_ACCURACY_M = 3.0f
         private const val DEFAULT_SPEED_ACCURACY = 0.5f
@@ -76,8 +80,15 @@ class MockLocationProvider(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var collectJob: Job? = null
+    private var heartbeatJob: Job? = null
     private var previousRecord: FitRecord? = null
     private var running = false
+
+    /** Last record we published a position from — the fix the heartbeat holds. */
+    @Volatile private var lastPositioned: FitRecord? = null
+    /** [SystemClock.elapsedRealtime] of the last publish, so the heartbeat only
+     *  fires when the live record stream has gone quiet. */
+    @Volatile private var lastPublishMs = 0L
 
     /**
      * Install test providers and begin streaming mock locations from the
@@ -88,12 +99,27 @@ class MockLocationProvider(
         running = true
         installProviders()
         previousRecord = null
+        lastPositioned = null
+        lastPublishMs = 0L
         collectJob = scope.launch {
             replayEngine.currentRecord.collect { record ->
                 if (record != null && record.hasPosition) {
                     publishLocation(record)
                     previousRecord = record
+                    lastPositioned = record
                 }
+            }
+        }
+        // Heartbeat: hold the GPS fix alive when the live record stream goes
+        // quiet — the original ride is stationary / a positionless (GPS-off)
+        // stretch, or playback is paused. Without a steady stream Android ages
+        // out the test-provider location and consumers lose the fix. Re-publish
+        // the last known position whenever nothing has gone out for HEARTBEAT_MS.
+        heartbeatJob = scope.launch {
+            while (isActive) {
+                delay(HEARTBEAT_MS)
+                val idleMs = SystemClock.elapsedRealtime() - lastPublishMs
+                if (idleMs >= HEARTBEAT_MS) lastPositioned?.let { publishLocation(it) }
             }
         }
     }
@@ -104,6 +130,9 @@ class MockLocationProvider(
         running = false
         collectJob?.cancel()
         collectJob = null
+        heartbeatJob?.cancel()
+        heartbeatJob = null
+        lastPositioned = null
         removeProviders()
         previousRecord = null
     }
@@ -187,6 +216,7 @@ class MockLocationProvider(
                 Log.w(TAG, "setTestProviderLocation($provider) failed: ${e.message}")
             }
         }
+        lastPublishMs = SystemClock.elapsedRealtime()
     }
 
     // ─── geo math ──────────────────────────────────────────────────────────

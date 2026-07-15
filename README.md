@@ -56,17 +56,13 @@ The app is two screens — **Select Ride** and **Replay** — styled to match Ka
 - **Draggable timeline** — drag or tap to seek anywhere in the ride
 - **Bookmarks + loop** — mark points and loop between two of them for repeated segment testing
 - **Mock GPS injection** via Android `LocationManager` — Karoo OS sees position move along the recorded route
+- **Holds the GPS fix when stationary/paused** — a ~1 Hz heartbeat re-publishes the last position through stopped/positionless stretches of the ride (and pauses), so consumers don't drop the fix
 - **Virtual sensor devices** for Power, Heart Rate, Cadence, Speed via the `karoo-ext` Device API
 - **Variable playback speed** — 1× / 2× / 5× / 10×
 - **State survives round-trips** — reopening from the Extensions list, or backing out and re-selecting a ride, resumes in place
 
-### Known limitations
-
-- **GPS fix isn't held while paused.** Mock locations are published only on positioned records during active playback; while the replay is paused (or passing through a stopped/positionless segment of the FIT) the fix isn't refreshed, so consumers may drop it. A last-position heartbeat is the planned fix.
-
 ### Planned
 
-- Hold the mock GPS fix through pauses/stopped segments (heartbeat)
 - External FIT import (drag-and-drop)
 - GPX import (route-shape testing without sensor data)
 
