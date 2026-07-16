@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -26,6 +27,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,8 +58,18 @@ fun RideSelectorScreen(
     val starred by viewModel.starred.collectAsState()
     val selected by viewModel.selectedRide.collectAsState()
     val context = LocalContext.current
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) { viewModel.scanRides(context) }
+
+    // Starred rides pin to the top of the list; the rest follow. `rides` is
+    // already newest-first from the repository, and partition preserves order,
+    // so each group stays newest-first.
+    val orderedRides = remember(rides, starred) {
+        val (pinned, others) = rides.partition { it.file.absolutePath in starred }
+        pinned + others
+    }
 
     Column(
         modifier = Modifier
@@ -84,8 +97,8 @@ fun RideSelectorScreen(
                 modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
             )
         } else {
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(rides, key = { it.file.absolutePath }) { entry ->
+            LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+                items(orderedRides, key = { it.file.absolutePath }) { entry ->
                     LaunchedEffect(entry.file.absolutePath) { viewModel.ensureSummary(entry) }
                     RideRow(
                         entry = entry,
@@ -93,7 +106,15 @@ fun RideSelectorScreen(
                         isLoaded = selected?.file?.absolutePath == entry.file.absolutePath,
                         isStarred = entry.file.absolutePath in starred,
                         onClick = { onRideSelected(entry) },
-                        onToggleStar = { viewModel.toggleStar(entry) },
+                        onToggleStar = {
+                            val willPin = entry.file.absolutePath !in starred
+                            viewModel.toggleStar(entry)
+                            // Pinning moves the ride to index 0; LazyColumn keeps
+                            // its scroll anchored to the old top item, so scroll
+                            // up to reveal the newly-pinned ride instead of it
+                            // slipping above the viewport.
+                            if (willPin) scope.launch { listState.animateScrollToItem(0) }
+                        },
                     )
                 }
             }
