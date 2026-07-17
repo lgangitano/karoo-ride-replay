@@ -52,11 +52,20 @@ class KarooRideReplayExtension : KarooExtension(EXTENSION_ID, BuildConfig.VERSIO
     override fun onCreate() {
         super.onCreate()
         instance = this
-        // MockLocationProvider always-on while the extension lives. It installs
-        // test providers + subscribes to ReplayEngine.currentRecord; while the
-        // engine is idle, no emissions occur.
-        mockLocation = MockLocationProvider(applicationContext, replayEngine).also { it.start() }
+        // Create the provider but do NOT install test providers yet. Installing
+        // at startup failed silently before the app was picked as the device's
+        // mock-location app and forced an app restart (issue #1); it also
+        // hijacked real GPS when no replay was running. The UI arms it via
+        // [armMockLocation] when a replay starts and [disarmMockLocation] when
+        // the user exits, so real GPS is used whenever nothing is replaying.
+        mockLocation = MockLocationProvider(applicationContext, replayEngine)
     }
+
+    /** Install mock GPS + start streaming. Called by the UI when a replay starts. */
+    fun armMockLocation() = mockLocation?.arm()
+
+    /** Remove mock GPS so real GPS returns. Called by the UI when the replay is exited. */
+    fun disarmMockLocation() = mockLocation?.disarm()
 
     override fun onDestroy() {
         mockLocation?.destroy()

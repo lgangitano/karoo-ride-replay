@@ -68,10 +68,11 @@ class MainActivity : ComponentActivity() {
                             PlaybackScreen(
                                 viewModel = viewModel,
                                 onBack = {
-                                    // Pause (not stop): keep the replay position so
-                                    // re-selecting the same ride reopens where it was,
-                                    // instead of snapping to 0:00. Streaming halts.
-                                    viewModel.pause()
+                                    // Exit the replay: pause (keep position so re-selecting
+                                    // the ride reopens in place, not at 0:00) AND disarm mock
+                                    // GPS so the Karoo returns to real GPS. Distinct from
+                                    // "To ride", which keeps replaying while the rider records.
+                                    viewModel.exitReplay()
                                     nav.popBackStack("rides", inclusive = false)
                                 }
                             )

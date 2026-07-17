@@ -42,9 +42,18 @@ import kotlin.math.sqrt
  *     records themselves, fall back to delta-derived values when the FIT
  *     omits them (some old files don't include `speed`).
  *
- * Lifecycle: [start] installs test providers and begins streaming from
- * [ReplayEngine.currentRecord]. [stop] removes the test providers and
- * cancels the collection coroutine. Idempotent.
+ * Lifecycle: [arm] installs test providers and begins streaming from
+ * [ReplayEngine.currentRecord]; [disarm] removes the test providers and
+ * cancels the collection coroutine. Both idempotent.
+ *
+ * Providers are installed on [arm] (called when a replay actually starts),
+ * NOT at extension-service startup. Registering at startup failed silently
+ * whenever the app hadn't yet been picked as the device's mock-location app
+ * — Android only permits `addTestProvider` once that designation is set —
+ * which forced users to restart the app after configuring it (issue #1).
+ * Arming at replay time also means the Karoo uses its real GPS whenever no
+ * replay is running, so a subsequent real ride isn't hijacked by a stale
+ * mock fix.
  */
 class MockLocationProvider(
     context: Context,
@@ -92,9 +101,10 @@ class MockLocationProvider(
 
     /**
      * Install test providers and begin streaming mock locations from the
-     * replay engine. Safe to call repeatedly; no-op if already running.
+     * replay engine. Called when a replay starts. Safe to call repeatedly;
+     * no-op if already armed.
      */
-    fun start() {
+    fun arm() {
         if (running) return
         running = true
         installProviders()
@@ -124,8 +134,11 @@ class MockLocationProvider(
         }
     }
 
-    /** Cancel coroutine + remove test providers. Idempotent. */
-    fun stop() {
+    /**
+     * Remove test providers + stop streaming, so the Karoo falls back to its
+     * real GPS. Called when the user exits the replay. Idempotent.
+     */
+    fun disarm() {
         if (!running) return
         running = false
         collectJob?.cancel()
@@ -139,7 +152,7 @@ class MockLocationProvider(
 
     /** Tear down on extension destroy. */
     fun destroy() {
-        stop()
+        disarm()
         scope.cancel()
     }
 

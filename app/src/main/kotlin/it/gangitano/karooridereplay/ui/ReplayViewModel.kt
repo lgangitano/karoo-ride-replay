@@ -229,8 +229,26 @@ class ReplayViewModel(app: Application) : AndroidViewModel(app) {
         prefs.edit().putStringSet(KEY_PATHS, HashSet(next)).apply()
     }
 
-    fun play() { engine()?.play() }
+    fun play() {
+        engine()?.play()
+        // Arm mock GPS only once a replay is actually playing (not at service
+        // startup): registration succeeds after the user has set this app as the
+        // mock-location app, and real GPS is used whenever nothing is replaying.
+        KarooRideReplayExtension.instance?.armMockLocation()
+    }
     fun pause() { engine()?.pause() }
+
+    /**
+     * Leave the replay: pause (keeping position for reopen-in-place) and disarm
+     * mock GPS so the Karoo falls back to real GPS. This is the back-to-picker
+     * path; "To ride" deliberately does NOT call it, so a replay keeps driving
+     * the sensors while the rider records a ride.
+     */
+    fun exitReplay() {
+        engine()?.pause()
+        KarooRideReplayExtension.instance?.disarmMockLocation()
+    }
+
     fun seek(seconds: Long) { engine()?.seek(seconds) }
     fun setSpeed(multiplier: Double) { engine()?.setSpeed(multiplier) }
     fun addMarker() { engine()?.addMarker() }

@@ -6,6 +6,15 @@ _(nothing open)_
 
 ## Shipped
 
+### GPS mock: register on replay, release on exit (issue #1) (2026-07-17)
+The mock GPS provider was registered at extension-service startup, which failed
+silently until the app was selected as the device's mock-location app (forcing an
+app restart) and hijacked real GPS when nothing was replaying. Now the provider is
+armed when a replay starts and disarmed when the rider exits back to the picker, so
+the Karoo uses real GPS whenever nothing is playing back. "To ride" keeps the replay
+armed so a rider can record against it. Verified on-device (dumpsys/logcat): nothing
+installed at launch; installed on Play; removed on exit; reinstalled on replay.
+
 ### UI redesign to the Karoo Visual Data Field System (v0.1.4, 2026-07-15)
 Full redesign of both screens to the Hammerhead Karoo look, collapsed to a two-screen
 flow, validated on-device (Karoo 2). This subsumed the earlier transport-simplification
