@@ -6,7 +6,7 @@ Open-source ride-simulation extension for Hammerhead Karoo cycling computers. Re
   <img src="docs/playback-screen.png" alt="Karoo Ride Replay — Playback screen" width="320" />
 </p>
 
-> Status: alpha (v0.1.4). UI redesigned to the Hammerhead Karoo look and validated on-device.
+> Status: beta (v0.9.0). UI redesigned to the Hammerhead Karoo look, mock GPS scoped to active replays, and validated on-device.
 
 ## Why
 
@@ -24,6 +24,8 @@ The Karoo 3 doesn't have ADB enabled by default, so the supported sideload path 
 5. Open the app once from the Karoo's app drawer → grant **All files access** when asked (required to read `FitFiles/`).
 6. In Android Developer Options → **Select mock location app**, pick *Karoo Ride Replay*. (If Dev Options aren't on yet: Settings → About → tap "Build number" seven times.)
 
+The app only takes over GPS while a replay is actually playing, and hands it straight back when you exit — so you can leave it selected as the mock-location app and still ride normally with real GPS. (No app restart needed after selecting it, unlike earlier builds.)
+
 ## Install on Karoo 2
 
 Karoo 2 has ADB enabled. Plug it in over USB and run:
@@ -40,26 +42,28 @@ Then the same one-time setup as Karoo 3 — grant **All files access** on first 
 
 The app is two screens — **Select Ride** and **Replay** — styled to match Karoo OS.
 
-1. **Pick a ride** — the picker lists FIT files from `FitFiles/` and `Download/`, newest first. Each row leads with the ride's write-time and a parsed `duration · distance · size`, and the currently-loaded ride is highlighted. Near-empty files (aborted/quick test recordings with no real ride in them) are filtered out. Tap a row to open it straight in Replay.
+1. **Pick a ride** — the picker lists FIT files from `FitFiles/` and `Download/`, newest first. Each row leads with the ride's write-time and a parsed `duration · distance · size`, and the currently-loaded ride is highlighted. Near-empty files (aborted/quick test recordings with no real ride in them) are filtered out. Tap a row to open it straight in Replay. Tap the **star** to pin a ride to the top of the list — pins persist across restarts.
 2. **In Karoo Settings → Sensors → Add Sensor**, pair the virtual sensor (Power / HR / Cadence / Speed) once.
 3. **Hit Play.** The Replay screen fits one pane: a large current-time readout, a draggable timeline, transport (‹10s / Play-Pause / 10s›), and a small strip confirming the live Power/HR/Speed/Cadence stream.
 4. **Scrub the timeline** — drag or tap anywhere to seek to that point of the ride.
 5. **Mark / Loop / Clear** — drop bookmarks, then toggle **Loop** to repeat between the outer two marks (handy for regression-testing a segment). Scrubbing out of the marked window releases the loop.
 6. **Speed** — replay at 1× / 2× / 5× / 10× to exercise a long ride quickly.
-7. **To ride** — the full-width bar minimizes to the Karoo's normal ride view while playback keeps streaming, so your other extensions see real-looking sensor + GPS data.
-8. **Back** — the bottom-left chevron (or the hardware back button) returns to the picker; playback pauses and keeps its position, so re-selecting the ride resumes where you left off.
+7. **To ride** — the full-width bar minimizes to the Karoo's normal ride view while playback keeps streaming (mock GPS stays active), so your other extensions see real-looking sensor + GPS data — and you can record a ride against the replay.
+8. **Back** — the bottom-left chevron (or the hardware back button) returns to the picker; playback pauses and keeps its position (so re-selecting the ride resumes where you left off), and mock GPS is released so the Karoo returns to its real GPS.
 
-## Features (v0.1.x)
+## Features (v0.9.0)
 
 - **Karoo-native UI** — the Hammerhead Visual Data Field System (pure-black, mono numerals, pill controls), one pane, no scrolling
 - **Ride library** — scans Karoo's `FitFiles/`, leads with write-time + parsed duration/distance/size, hides near-empty recordings
+- **Star favourites** — pin rides to the top of the list; pins persist across app restarts
 - **Draggable timeline** — drag or tap to seek anywhere in the ride
 - **Bookmarks + loop** — mark points and loop between two of them for repeated segment testing
 - **Mock GPS injection** via Android `LocationManager` — Karoo OS sees position move along the recorded route
-- **Holds the GPS fix when stationary/paused** — a ~1 Hz heartbeat re-publishes the last position through stopped/positionless stretches of the ride (and pauses), so consumers don't drop the fix
+- **GPS scoped to active replays** — the mock provider is registered only while a replay is playing and released when you exit, so the Karoo uses real GPS whenever nothing is replaying (no dev-settings dance, no app restart)
+- **Holds the GPS fix when stationary/paused** — within a replay, a ~1 Hz heartbeat re-publishes the last position through stopped/positionless stretches (and pauses), so consumers don't drop the fix
 - **Virtual sensor devices** for Power, Heart Rate, Cadence, Speed via the `karoo-ext` Device API
 - **Variable playback speed** — 1× / 2× / 5× / 10×
-- **State survives round-trips** — reopening from the Extensions list, or backing out and re-selecting a ride, resumes in place
+- **State survives round-trips** — reopening from the Extensions list (single-instance, so Open resumes rather than restarts), or backing out and re-selecting a ride, resumes in place
 
 ### Planned
 

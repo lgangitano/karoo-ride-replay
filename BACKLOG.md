@@ -6,6 +6,14 @@ _(nothing open)_
 
 ## Shipped
 
+### Star favourites + idempotent reopen (2026-07-17)
+Tap the star to pin a ride to the top of the picker; pins are stored in
+SharedPreferences so they survive ViewModel recreation, app restart, and reboot.
+The picker scrolls to the top when a ride is pinned so it doesn't slip above the
+viewport. `MainActivity` is `launchMode=singleTask`, so "Open" from the Extensions
+list resumes the running instance (idempotent to "Switch to") instead of spawning a
+fresh Activity and losing in-memory state.
+
 ### GPS mock: register on replay, release on exit (issue #1) (2026-07-17)
 The mock GPS provider was registered at extension-service startup, which failed
 silently until the app was selected as the device's mock-location app (forcing an
