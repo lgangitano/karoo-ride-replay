@@ -37,15 +37,18 @@ class ReplayViewModel : ViewModel() {
         object Idle : LoadStatus()
         object Loading : LoadStatus()
         data class Loaded(
-            val recordCount: Int,
             val totalSeconds: Long,
             val ridePath: String,
         ) : LoadStatus()
         data class Error(val message: String) : LoadStatus()
     }
 
-    /** A lazily-parsed summary of a ride, shown on the picker rows. */
-    data class RideSummary(val durationSeconds: Long, val distanceMeters: Double?)
+    /**
+     * A lazily-parsed summary of a ride, shown on the picker rows.
+     * A null [durationSeconds] marks a file that failed to parse — cached so
+     * a corrupt FIT is parsed once, not retried on every recomposition.
+     */
+    data class RideSummary(val durationSeconds: Long?, val distanceMeters: Double?)
 
     private val _rideList = MutableStateFlow<List<FitFileEntry>>(emptyList())
     val rideList: StateFlow<List<FitFileEntry>> = _rideList.asStateFlow()
@@ -97,28 +100,36 @@ class ReplayViewModel : ViewModel() {
             modifiedMs = file.lastModified(),
         )
         _loadStatus.value = LoadStatus.Loaded(
-            recordCount = 0,
             totalSeconds = eng.totalSeconds,
             ridePath = path,
         )
     }
 
-    // Passthrough state flows from the engine. Use inert default flows when the
-    // extension service hasn't started yet (UI doesn't crash on cold boot).
+    // Inert defaults for when the extension service hasn't started yet (cold
+    // boot before the service binds). Single stable instances: minting a fresh
+    // MutableStateFlow inside each getter made collectAsState see a different
+    // flow every recomposition, cancelling and restarting collection each time.
+    private val inertState = MutableStateFlow(ReplayEngine.State.IDLE).asStateFlow()
+    private val inertElapsed = MutableStateFlow(0L).asStateFlow()
+    private val inertSpeed = MutableStateFlow(1.0).asStateFlow()
+    private val inertRecord = MutableStateFlow<FitRecord?>(null).asStateFlow()
+    private val inertMarkers = MutableStateFlow<List<Long>>(emptyList()).asStateFlow()
+    private val inertLoop = MutableStateFlow(false).asStateFlow()
+
+    // Passthrough state flows from the engine, falling back to the inert
+    // defaults above so the UI never NPEs on cold boot.
     val state: StateFlow<ReplayEngine.State>
-        get() = engine()?.state ?: MutableStateFlow(ReplayEngine.State.IDLE).asStateFlow()
-    val progress: StateFlow<Double>
-        get() = engine()?.progress ?: MutableStateFlow(0.0).asStateFlow()
+        get() = engine()?.state ?: inertState
     val elapsedSeconds: StateFlow<Long>
-        get() = engine()?.elapsedSeconds ?: MutableStateFlow(0L).asStateFlow()
+        get() = engine()?.elapsedSeconds ?: inertElapsed
     val playbackSpeed: StateFlow<Double>
-        get() = engine()?.playbackSpeed ?: MutableStateFlow(1.0).asStateFlow()
+        get() = engine()?.playbackSpeed ?: inertSpeed
     val currentRecord: StateFlow<FitRecord?>
-        get() = engine()?.currentRecord ?: MutableStateFlow<FitRecord?>(null).asStateFlow()
+        get() = engine()?.currentRecord ?: inertRecord
     val markers: StateFlow<List<Long>>
-        get() = engine()?.markers ?: MutableStateFlow<List<Long>>(emptyList()).asStateFlow()
+        get() = engine()?.markers ?: inertMarkers
     val loop: StateFlow<Boolean>
-        get() = engine()?.loop ?: MutableStateFlow(false).asStateFlow()
+        get() = engine()?.loop ?: inertLoop
     val totalSeconds: Long
         get() = engine()?.totalSeconds ?: 0L
 
@@ -139,7 +150,7 @@ class ReplayViewModel : ViewModel() {
         // ride triggers a fresh parse + load.
         if (ridePath == lastSelectedRidePath && eng != null && eng.totalSeconds > 0L) {
             _selectedRide.value = entry
-            _loadStatus.value = LoadStatus.Loaded(0, eng.totalSeconds, ridePath)
+            _loadStatus.value = LoadStatus.Loaded(eng.totalSeconds, ridePath)
             return
         }
         loadJob?.cancel()
@@ -153,7 +164,7 @@ class ReplayViewModel : ViewModel() {
                 engine()?.load(records)
                 val total = if (records.isEmpty()) 0L
                     else (records.last().timestampMs - records.first().timestampMs) / 1000L
-                _loadStatus.value = LoadStatus.Loaded(records.size, total, ridePath)
+                _loadStatus.value = LoadStatus.Loaded(total, ridePath)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -185,11 +196,14 @@ class ReplayViewModel : ViewModel() {
                             distanceMeters = records.lastOrNull { it.distance != null }?.distance,
                         )
                     } catch (e: Exception) {
-                        null
+                        // Cache the failure (null duration) — leaving it uncached
+                        // meant every recomposition of the row re-parsed the
+                        // corrupt file, forever.
+                        RideSummary(null, null)
                     }
                 }
             }
-            if (summary != null) _summaries.value = _summaries.value + (key to summary)
+            _summaries.value = _summaries.value + (key to summary)
             parsing -= key
         }
     }
@@ -202,7 +216,6 @@ class ReplayViewModel : ViewModel() {
 
     fun play() { engine()?.play() }
     fun pause() { engine()?.pause() }
-    fun stop() { engine()?.stop() }
     fun seek(seconds: Long) { engine()?.seek(seconds) }
     fun setSpeed(multiplier: Double) { engine()?.setSpeed(multiplier) }
     fun addMarker() { engine()?.addMarker() }

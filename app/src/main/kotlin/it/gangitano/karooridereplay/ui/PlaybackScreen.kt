@@ -1,6 +1,7 @@
 package it.gangitano.karooridereplay.ui
 
 import android.app.Activity
+import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -223,7 +224,7 @@ fun PlaybackScreen(viewModel: ReplayViewModel, onBack: () -> Unit) {
         ) {
             StreamStat("PWR", currentRecord?.power?.let { "$it" })
             StreamStat("HR", currentRecord?.heartRate?.let { "$it" })
-            StreamStat("SPD", currentRecord?.speed?.let { "%.1f".format(it * 3.6) })
+            StreamStat("SPD", currentRecord?.speed?.let { formatOneDecimal(it * 3.6) })
             StreamStat("CAD", currentRecord?.cadence?.let { "$it" })
         }
 
@@ -354,7 +355,9 @@ private fun Timeline(
                         change.consume()
                         val f = (change.position.x / widthPx).coerceIn(0f, 1f)
                         scrubFraction = f
-                        val now = System.currentTimeMillis()
+                        // Monotonic clock: wall time (currentTimeMillis) can step
+                        // under NTP and stall or burst the throttle.
+                        val now = SystemClock.elapsedRealtime()
                         if (now - lastSeekMs >= 120L) {
                             onSeek(fracToSeconds(f))
                             lastSeekMs = now
@@ -422,4 +425,4 @@ internal fun isPlaybackReady(
     loadStatus.ridePath == selectedRidePath
 
 private fun formatSpeed(speed: Double): String =
-    if (speed == speed.toLong().toDouble()) "${speed.toLong()}×" else "%.1f×".format(speed)
+    if (speed == speed.toLong().toDouble()) "${speed.toLong()}×" else "${formatOneDecimal(speed)}×"

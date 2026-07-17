@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -167,24 +168,40 @@ private fun RideRow(
                 modifier = Modifier.weight(1f),
                 maxLines = 1,
             )
-            Icon(
-                imageVector = KarooIcons.Star,
-                contentDescription = if (isStarred) "Unstar" else "Star",
-                tint = if (isStarred) Karoo.Yellow else Karoo.Grey5,
-                modifier = Modifier
-                    .size(18.dp)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = onToggleStar,
-                    ),
-            )
+            // The star occupies an 18dp layout slot but its touch target is a
+            // 44dp requiredSize box centered on it (Compose hit-tests children
+            // beyond parent bounds). An 18dp clickable was well under the 48dp
+            // accessibility minimum and flaked under real fingers on-device.
+            Box(modifier = Modifier.size(18.dp), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .requiredSize(44.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = onToggleStar,
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = KarooIcons.Star,
+                        contentDescription = if (isStarred) "Unstar" else "Star",
+                        tint = if (isStarred) Karoo.Yellow else Karoo.Grey5,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
         }
 
         // Line 2 — enrichment: duration · distance · size (duration highlighted white).
+        // "…" = parse pending, "—" = the file failed to parse (cached, not retried).
         Row {
             Text(
-                text = summary?.let { formatHHMMSS(it.durationSeconds) } ?: "…",
+                text = when {
+                    summary == null -> "…"
+                    summary.durationSeconds == null -> "—"
+                    else -> formatHHMMSS(summary.durationSeconds)
+                },
                 style = Karoo.dataSm.copy(color = Karoo.White),
             )
             Text(

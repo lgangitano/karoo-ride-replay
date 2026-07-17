@@ -42,7 +42,6 @@ object Karoo {
     val Grey4 = Color(0xFF636363)
     val Grey5 = Color(0xFF484848)
     val Divider = Color(0xFF2A2A2A)
-    val Grey7 = Color(0xFF1A1A1A)
 
     /** Live data / play. */
     val Green = Color(0xFF0EFF00)
@@ -53,9 +52,6 @@ object Karoo {
 
     /** Error / negative. */
     val Red = Color(0xFFFF5252)
-
-    /** Elevation. */
-    val Aegean = Color(0xFF214559)
 
     /** Press / tile-dark. */
     val PressDark = Color(0xFF141414)

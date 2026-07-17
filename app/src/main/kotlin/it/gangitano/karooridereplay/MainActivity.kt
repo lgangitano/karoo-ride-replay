@@ -82,8 +82,12 @@ class MainActivity : ComponentActivity() {
                     // the running ride survives the fresh Activity instead of
                     // dropping the user on an empty picker. "rides" stays the root
                     // so Back still returns to the picker.
+                    // singleTop: this effect re-runs on Activity recreation and
+                    // would otherwise stack duplicate "playback" entries.
                     LaunchedEffect(Unit) {
-                        if (viewModel.hasActiveRide()) nav.navigate("playback")
+                        if (viewModel.hasActiveRide()) {
+                            nav.navigate("playback") { launchSingleTop = true }
+                        }
                     }
                 }
             }

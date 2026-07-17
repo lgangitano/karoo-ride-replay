@@ -1,5 +1,6 @@
 package it.gangitano.karooridereplay.extension
 
+import it.gangitano.karooridereplay.BuildConfig
 import it.gangitano.karooridereplay.mocklocation.MockLocationProvider
 import it.gangitano.karooridereplay.replay.ReplayEngine
 import it.gangitano.karooridereplay.vdevice.ReplayVirtualDevice
@@ -34,7 +35,9 @@ import kotlinx.coroutines.launch
  * Other components access the running extension via the [instance]
  * companion (the common Karoo-extension singleton pattern).
  */
-class KarooRideReplayExtension : KarooExtension(EXTENSION_ID, "0.1.0-alpha") {
+// The version reported to Karoo OS tracks the app version via BuildConfig —
+// a hardcoded string here drifted (stuck at 0.1.0-alpha while the app shipped 0.1.4).
+class KarooRideReplayExtension : KarooExtension(EXTENSION_ID, BuildConfig.VERSION_NAME) {
 
     val replayEngine: ReplayEngine = ReplayEngine()
 

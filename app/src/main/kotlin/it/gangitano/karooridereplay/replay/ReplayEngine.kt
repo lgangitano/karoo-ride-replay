@@ -21,10 +21,11 @@ import kotlinx.coroutines.launch
  *
  * Public surface:
  *   - [load] sets a new ride. Resets state to IDLE at index 0.
- *   - [play] / [pause] / [stop] standard playback controls.
+ *   - [play] / [pause] standard playback controls (back-from-playback pauses;
+ *     there is no stop/reset in the UI flow).
  *   - [seek] jumps to an elapsed-seconds offset from ride start (Luigi's 2b).
  *   - [setSpeed] adjusts playback multiplier (1×, 2×, 5×, 10×, …).
- *   - [currentRecord], [state], [progress], [elapsedSeconds] are observable.
+ *   - [currentRecord], [state], [elapsedSeconds] are observable.
  *
  * Timing model: each tick delays by the real inter-record gap divided by the
  * speed multiplier. So at 1× a 1-Hz-recorded ride plays back at one sample
@@ -39,10 +40,6 @@ class ReplayEngine {
 
     private val _currentRecord = MutableStateFlow<FitRecord?>(null)
     val currentRecord: StateFlow<FitRecord?> = _currentRecord.asStateFlow()
-
-    /** 0.0–1.0 fraction through the loaded ride. */
-    private val _progress = MutableStateFlow(0.0)
-    val progress: StateFlow<Double> = _progress.asStateFlow()
 
     /** Elapsed seconds from ride start to the currently-emitted record. */
     private val _elapsedSeconds = MutableStateFlow(0L)
@@ -88,7 +85,6 @@ class ReplayEngine {
             _currentRecord.value = records.first()
         }
         currentIndex = 0
-        _progress.value = 0.0
         _elapsedSeconds.value = 0L
         _state.value = State.IDLE
         // Markers are per-ride; a fresh ride starts with none.
@@ -138,16 +134,6 @@ class ReplayEngine {
         if (_state.value != State.PLAYING) return
         _state.value = State.PAUSED
         playbackJob?.cancel()
-    }
-
-    /** Stop playback and reset to the start of the loaded ride. */
-    fun stop() {
-        playbackJob?.cancel()
-        currentIndex = 0
-        _currentRecord.value = samples.firstOrNull()
-        _progress.value = 0.0
-        _elapsedSeconds.value = 0L
-        _state.value = State.IDLE
     }
 
     /**
@@ -210,8 +196,6 @@ class ReplayEngine {
         val record = samples.getOrNull(currentIndex) ?: return
         _currentRecord.value = record
         _elapsedSeconds.value = (record.timestampMs - rideStartMs) / 1000L
-        _progress.value = if (samples.size <= 1) 1.0
-            else currentIndex.toDouble() / samples.lastIndex
     }
 
     /**
