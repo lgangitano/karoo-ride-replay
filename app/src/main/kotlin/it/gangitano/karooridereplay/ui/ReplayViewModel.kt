@@ -1,7 +1,8 @@
 package it.gangitano.karooridereplay.ui
 
+import android.app.Application
 import android.content.Context
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import it.gangitano.karooridereplay.data.FitFileRepository
 import it.gangitano.karooridereplay.data.FitFileRepository.FitFileEntry
@@ -29,9 +30,19 @@ import java.io.File
  * extension isn't running (e.g., during cold boot before the service binds),
  * state-flow getters fall back to inert defaults so the UI never NPEs.
  */
-class ReplayViewModel : ViewModel() {
+class ReplayViewModel(app: Application) : AndroidViewModel(app) {
 
     private val parser = FitParser()
+
+    /**
+     * Starred rides persist in SharedPreferences, not ViewModel state. Going
+     * "To ride" to record and reopening the app (Extensions → Open) builds a
+     * fresh Activity + ViewModel; instance state would reset the stars to empty
+     * even though the replay position survives (that lives in the extension
+     * service). Prefs make the pins durable across ViewModel recreation and
+     * process death — which is what "pin my favourite rides" should mean.
+     */
+    private val prefs = app.getSharedPreferences(PREFS_STARRED, Context.MODE_PRIVATE)
 
     sealed class LoadStatus {
         object Idle : LoadStatus()
@@ -60,8 +71,8 @@ class ReplayViewModel : ViewModel() {
     private val _summaries = MutableStateFlow<Map<String, RideSummary>>(emptyMap())
     val summaries: StateFlow<Map<String, RideSummary>> = _summaries.asStateFlow()
 
-    /** Absolute paths the user has starred this session. */
-    private val _starred = MutableStateFlow<Set<String>>(emptySet())
+    /** Absolute paths the user has starred, loaded from and written through to prefs. */
+    private val _starred = MutableStateFlow(prefs.getStringSet(KEY_PATHS, emptySet())!!.toSet())
     val starred: StateFlow<Set<String>> = _starred.asStateFlow()
 
     /** Paths currently being parsed, so we never launch a second parse for one. */
@@ -210,8 +221,12 @@ class ReplayViewModel : ViewModel() {
 
     fun toggleStar(entry: FitFileEntry) {
         val key = entry.file.absolutePath
-        _starred.value =
-            if (key in _starred.value) _starred.value - key else _starred.value + key
+        val next = if (key in _starred.value) _starred.value - key else _starred.value + key
+        _starred.value = next
+        // Write through to prefs so the pin survives ViewModel recreation. Copy
+        // the set: SharedPreferences must not be handed a set it keeps a
+        // reference to and we later mutate.
+        prefs.edit().putStringSet(KEY_PATHS, HashSet(next)).apply()
     }
 
     fun play() { engine()?.play() }
@@ -230,5 +245,9 @@ class ReplayViewModel : ViewModel() {
          * process dies the engine dies too, so there is nothing to restore anyway.
          */
         private var lastSelectedRidePath: String? = null
+
+        /** SharedPreferences file + key for the durable set of starred ride paths. */
+        private const val PREFS_STARRED = "ride_replay_starred"
+        private const val KEY_PATHS = "starred_paths"
     }
 }

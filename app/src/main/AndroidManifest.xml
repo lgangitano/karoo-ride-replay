@@ -23,8 +23,19 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat">
 
+        <!--
+          singleTask makes "Open" from the Karoo Extensions list idempotent to
+          "Switch to": with the default (standard) launch mode, Open spins up a
+          NEW Activity instance (and a fresh ViewModel, losing in-memory state
+          like the starred rides), while Switch-to resumes the existing one.
+          singleTask guarantees a single instance — a launch Intent is routed to
+          the running Activity via onNewIntent() instead of recreating it, so
+          Open resumes exactly what Switch-to would. (Stars are ALSO persisted to
+          prefs, which is the only thing that survives genuine process death.)
+        -->
         <activity
             android:name=".MainActivity"
+            android:launchMode="singleTask"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
