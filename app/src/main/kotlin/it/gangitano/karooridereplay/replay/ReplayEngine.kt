@@ -9,6 +9,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -26,6 +27,8 @@ import kotlinx.coroutines.launch
  *   - [seek] jumps to an elapsed-seconds offset from ride start (Luigi's 2b).
  *   - [setSpeed] adjusts playback multiplier (1×, 2×, 5×, 10×, …).
  *   - [currentRecord], [state], [elapsedSeconds] are observable.
+ *   - [sensorStates] / [cycleSensorState] simulate per-sensor dropouts;
+ *     [load] resets every sensor to streaming.
  *
  * Timing model: each tick delays by the real inter-record gap divided by the
  * speed multiplier. So at 1× a 1-Hz-recorded ride plays back at one sample
@@ -55,6 +58,10 @@ class ReplayEngine {
     /** When true and ≥2 markers exist, playback loops between the outer two. */
     private val _loop = MutableStateFlow(false)
     val loop: StateFlow<Boolean> = _loop.asStateFlow()
+
+    /** Per-sensor simulated connection state; every sensor streams after [load]. */
+    private val _sensorStates = MutableStateFlow(ALL_STREAMING)
+    val sensorStates: StateFlow<Map<Sensor, SensorState>> = _sensorStates.asStateFlow()
 
     private var samples: List<FitRecord> = emptyList()
     private var rideStartMs: Long = 0L
@@ -90,6 +97,8 @@ class ReplayEngine {
         // Markers are per-ride; a fresh ride starts with none.
         _markers.value = emptyList()
         _loop.value = false
+        // Sensor dropouts are per-ride too; a fresh ride starts all-streaming.
+        _sensorStates.value = ALL_STREAMING
     }
 
     /**
@@ -184,6 +193,11 @@ class ReplayEngine {
         _loop.value = !_loop.value
     }
 
+    /** Advance [sensor] one step along streaming → searching → missing → streaming. */
+    fun cycleSensorState(sensor: Sensor) {
+        _sensorStates.update { it + (sensor to it.getValue(sensor).next()) }
+    }
+
     /** Cancel all coroutines. Call on extension shutdown. */
     fun destroy() {
         playbackJob?.cancel()
@@ -213,6 +227,9 @@ class ReplayEngine {
     }
 
     companion object {
+        val ALL_STREAMING: Map<Sensor, SensorState> =
+            Sensor.entries.associateWith { SensorState.STREAMING }
+
         /**
          * Elapsed-time target used when [play] is invoked from the end of a ride.
          * An active loop restarts at its lower marker; all other cases restart at 0.
