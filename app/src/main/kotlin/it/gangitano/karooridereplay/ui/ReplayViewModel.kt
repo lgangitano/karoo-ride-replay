@@ -11,6 +11,8 @@ import it.gangitano.karooridereplay.extension.KarooRideReplayExtension
 import it.gangitano.karooridereplay.replay.FitParser
 import it.gangitano.karooridereplay.replay.FitRecord
 import it.gangitano.karooridereplay.replay.ReplayEngine
+import it.gangitano.karooridereplay.replay.Sensor
+import it.gangitano.karooridereplay.replay.SensorState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -138,6 +140,7 @@ class ReplayViewModel(app: Application) : AndroidViewModel(app) {
     private val inertRecord = MutableStateFlow<FitRecord?>(null).asStateFlow()
     private val inertMarkers = MutableStateFlow<List<Long>>(emptyList()).asStateFlow()
     private val inertLoop = MutableStateFlow(false).asStateFlow()
+    private val inertSensorStates = MutableStateFlow(ReplayEngine.ALL_STREAMING).asStateFlow()
 
     // Passthrough state flows from the engine, falling back to the inert
     // defaults above so the UI never NPEs on cold boot.
@@ -153,6 +156,8 @@ class ReplayViewModel(app: Application) : AndroidViewModel(app) {
         get() = engine()?.markers ?: inertMarkers
     val loop: StateFlow<Boolean>
         get() = engine()?.loop ?: inertLoop
+    val sensorStates: StateFlow<Map<Sensor, SensorState>>
+        get() = engine()?.sensorStates ?: inertSensorStates
     val totalSeconds: Long
         get() = engine()?.totalSeconds ?: 0L
 
@@ -266,6 +271,7 @@ class ReplayViewModel(app: Application) : AndroidViewModel(app) {
     fun addMarker() { engine()?.addMarker() }
     fun clearMarkers() { engine()?.clearMarkers() }
     fun toggleLoop() { engine()?.toggleLoop() }
+    fun cycleSensorState(sensor: Sensor) { engine()?.cycleSensorState(sensor) }
 
     companion object {
         /**

@@ -3,6 +3,11 @@ package it.gangitano.karooridereplay.ui
 import android.app.Activity
 import android.os.SystemClock
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -39,6 +44,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import it.gangitano.karooridereplay.replay.ReplayEngine
+import it.gangitano.karooridereplay.replay.Sensor
+import it.gangitano.karooridereplay.replay.SensorState
 import it.gangitano.karooridereplay.ui.theme.Karoo
 import it.gangitano.karooridereplay.ui.theme.KarooIcons
 import kotlin.math.roundToLong
@@ -51,7 +58,8 @@ internal const val STEP_FORWARD_LABEL = "10s ›"
  *
  * Playback is the hero: a big current-time readout, a draggable/tappable
  * timeline carrying yellow bookmark ticks, transport (‹10s / Play-Pause / 10s›),
- * a Mark/Loop/Clear row, a speed selector, a small streaming-confirmation strip,
+ * a Mark/Loop/Clear row, a speed selector, a sensor strip (tap-to-cycle each
+ * sensor's state when Separate sensors is on),
  * and a persistent full-width yellow To-ride bar.
  *
  * Two distinct exit paths, unchanged from before the redesign:
@@ -67,6 +75,8 @@ fun PlaybackScreen(viewModel: ReplayViewModel, onBack: () -> Unit) {
     val markers by viewModel.markers.collectAsState()
     val loop by viewModel.loop.collectAsState()
     val currentRecord by viewModel.currentRecord.collectAsState()
+    val sensorStates by viewModel.sensorStates.collectAsState()
+    val separateSensors by viewModel.separateSensors.collectAsState()
     val selectedRide by viewModel.selectedRide.collectAsState()
     val loadStatus by viewModel.loadStatus.collectAsState()
     val totalSeconds = viewModel.totalSeconds
@@ -222,10 +232,16 @@ fun PlaybackScreen(viewModel: ReplayViewModel, onBack: () -> Unit) {
             modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            StreamStat("PWR", currentRecord?.power?.let { "$it" })
-            StreamStat("HR", currentRecord?.heartRate?.let { "$it" })
-            StreamStat("SPD", currentRecord?.speed?.let { formatOneDecimal(it * 3.6) })
-            StreamStat("CAD", currentRecord?.cadence?.let { "$it" })
+            // Separate sensors: each readout is its sensor's control. Combined:
+            // display-only, and always streaming (the combined device ignores states).
+            fun stateOf(sensor: Sensor) =
+                if (separateSensors) sensorStates.getValue(sensor) else SensorState.STREAMING
+            fun cycle(sensor: Sensor): (() -> Unit)? =
+                if (separateSensors) ({ viewModel.cycleSensorState(sensor) }) else null
+            StreamStat("PWR", currentRecord?.power?.let { "$it" }, stateOf(Sensor.POWER), cycle(Sensor.POWER))
+            StreamStat("HR", currentRecord?.heartRate?.let { "$it" }, stateOf(Sensor.HEART_RATE), cycle(Sensor.HEART_RATE))
+            StreamStat("SPD", currentRecord?.speed?.let { formatOneDecimal(it * 3.6) }, stateOf(Sensor.SPEED), cycle(Sensor.SPEED))
+            StreamStat("CAD", currentRecord?.cadence?.let { "$it" }, stateOf(Sensor.CADENCE), cycle(Sensor.CADENCE))
         }
 
         // ── To-ride bar (persistent primary action) ──────────────────────────
@@ -284,11 +300,32 @@ private fun StateChip(state: ReplayEngine.State) {
     }
 }
 
+/**
+ * One sensor readout. Streaming shows the value; searching an amber pulsing
+ * "···"; missing a grey "--". Tappable when [onTap] is set (Separate sensors).
+ */
 @Composable
-private fun StreamStat(label: String, value: String?) {
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+private fun StreamStat(label: String, value: String?, state: SensorState, onTap: (() -> Unit)?) {
+    Row(
+        modifier = if (onTap != null) Modifier.clickable(onClick = onTap) else Modifier,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
         Text(label, style = Karoo.dataSm.copy(fontSize = 15.sp, color = Karoo.Grey3))
-        Text(value ?: "—", style = Karoo.dataSm.copy(fontSize = 15.sp, color = Karoo.White))
+        when (state) {
+            SensorState.STREAMING ->
+                Text(value ?: "—", style = Karoo.dataSm.copy(fontSize = 15.sp, color = Karoo.White))
+            SensorState.SEARCHING -> {
+                val alpha by rememberInfiniteTransition(label = "searching").animateFloat(
+                    initialValue = 0.3f,
+                    targetValue = 1f,
+                    animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse),
+                    label = "searchingAlpha",
+                )
+                Text("···", style = Karoo.dataSm.copy(fontSize = 15.sp, color = Karoo.Yellow.copy(alpha = alpha)))
+            }
+            SensorState.MISSING ->
+                Text("--", style = Karoo.dataSm.copy(fontSize = 15.sp, color = Karoo.Grey4))
+        }
     }
 }
 
