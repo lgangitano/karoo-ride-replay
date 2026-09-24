@@ -53,6 +53,7 @@ import it.gangitano.karooridereplay.ui.theme.KarooIcons
 fun RideSelectorScreen(
     viewModel: ReplayViewModel,
     onRideSelected: (FitFileEntry) -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     val rides by viewModel.rideList.collectAsState()
     val summaries by viewModel.summaries.collectAsState()
@@ -80,15 +81,32 @@ fun RideSelectorScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 18.dp, end = 18.dp, top = 14.dp, bottom = 10.dp),
+                .padding(start = 18.dp, end = 18.dp, top = 4.dp, bottom = 0.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text("SELECT RIDE", style = Karoo.sectionLabel)
-            Text(
-                text = "${rides.size} RIDES",
-                style = Karoo.dataSm.copy(fontSize = 14.sp, color = Karoo.Grey3),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "${rides.size} RIDES",
+                    style = Karoo.dataSm.copy(fontSize = 14.sp, color = Karoo.Grey3),
+                )
+                Box(
+                    modifier = Modifier
+                        .padding(start = 6.dp)
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .clickable(onClick = onOpenSettings),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = KarooIcons.Gear,
+                        contentDescription = "Settings",
+                        tint = Karoo.Grey1,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
+            }
         }
 
         if (rides.isEmpty()) {

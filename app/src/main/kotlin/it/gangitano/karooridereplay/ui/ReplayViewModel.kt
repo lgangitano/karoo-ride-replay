@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import it.gangitano.karooridereplay.data.FitFileRepository
 import it.gangitano.karooridereplay.data.FitFileRepository.FitFileEntry
+import it.gangitano.karooridereplay.data.ReplaySettings
 import it.gangitano.karooridereplay.extension.KarooRideReplayExtension
 import it.gangitano.karooridereplay.replay.FitParser
 import it.gangitano.karooridereplay.replay.FitRecord
@@ -74,6 +75,17 @@ class ReplayViewModel(app: Application) : AndroidViewModel(app) {
     /** Absolute paths the user has starred, loaded from and written through to prefs. */
     private val _starred = MutableStateFlow(prefs.getStringSet(KEY_PATHS, emptySet())!!.toSet())
     val starred: StateFlow<Set<String>> = _starred.asStateFlow()
+
+    private val settings = ReplaySettings(app)
+
+    /** The "Separate sensors" switch; written through to [ReplaySettings]. */
+    private val _separateSensors = MutableStateFlow(settings.separateSensors)
+    val separateSensors: StateFlow<Boolean> = _separateSensors.asStateFlow()
+
+    fun setSeparateSensors(on: Boolean) {
+        settings.separateSensors = on
+        _separateSensors.value = on
+    }
 
     /** Paths currently being parsed, so we never launch a second parse for one. */
     private val parsing = mutableSetOf<String>()
