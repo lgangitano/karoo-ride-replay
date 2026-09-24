@@ -1,8 +1,10 @@
 package it.gangitano.karooridereplay.extension
 
 import it.gangitano.karooridereplay.BuildConfig
+import it.gangitano.karooridereplay.data.ReplaySettings
 import it.gangitano.karooridereplay.mocklocation.MockLocationProvider
 import it.gangitano.karooridereplay.replay.ReplayEngine
+import it.gangitano.karooridereplay.vdevice.ReplayDevices
 import it.gangitano.karooridereplay.vdevice.ReplayVirtualDevice
 import io.hammerhead.karooext.extension.DataTypeImpl
 import io.hammerhead.karooext.extension.KarooExtension
@@ -21,18 +23,18 @@ import kotlinx.coroutines.launch
  *
  * Hosts the long-lived singletons:
  *   - [ReplayEngine] — the playback state machine, driven by the UI
- *   - One [ReplayVirtualDevice] — the consolidated virtual sensor exposing
- *     Power, HR, Cadence, Speed, and the per-tick distance delta
- *     (`TYPE_SPD_DISTANCE_DIFF_ID`) through a single karoo-ext Device that
- *     the user pairs once
+ *   - [ReplayDevices] — the combined virtual sensor (Power, HR, Cadence,
+ *     Speed, and the per-tick distance delta `TYPE_SPD_DISTANCE_DIFF_ID`,
+ *     paired once) and one device per sensor for the "Separate sensors"
+ *     setting
  *   - [MockLocationProvider] — pushes the engine's GPS coordinates into
  *     Android's `LocationManager` as test-provider locations
  *
  * Karoo-ext lifecycle:
- *   - [startScan] emits the single virtual device descriptor when the user
- *     opens Settings → Sensors → Add Sensor.
+ *   - [startScan] emits the combined device, or the four separate ones when
+ *     "Separate sensors" is on, when the user opens Add Sensor.
  *   - [connectDevice] dispatches the pair to [ReplayVirtualDevice.connect]
- *     when the user activates it.
+ *     for any of the five uids, whichever way the switch is set.
  *
  * Other components access the running extension via the [instance]
  * companion (the common Karoo-extension singleton pattern).
@@ -43,9 +45,9 @@ class KarooRideReplayExtension : KarooExtension(EXTENSION_ID, BuildConfig.VERSIO
 
     val replayEngine: ReplayEngine = ReplayEngine()
 
-    private val virtualDevice: ReplayVirtualDevice by lazy {
-        ReplayVirtualDevice.combined(extension, replayEngine.currentRecord)
-    }
+    private val devices: ReplayDevices by lazy { ReplayDevices(extension, replayEngine) }
+
+    private val settings: ReplaySettings by lazy { ReplaySettings(applicationContext) }
 
     private var mockLocation: MockLocationProvider? = null
 
@@ -82,16 +84,17 @@ class KarooRideReplayExtension : KarooExtension(EXTENSION_ID, BuildConfig.VERSIO
         val job = scope.launch {
             // Brief "scanning" pause for UX — same as KPower
             delay(SCAN_ANNOUNCE_DELAY_MS)
-            emitter.onNext(virtualDevice.source)
+            // Read the switch per scan, so flipping it applies to the next Add Sensor.
+            devices.offered(settings.separateSensors).forEach { emitter.onNext(it.source) }
         }
         emitter.setCancellable { job.cancel() }
     }
 
     override fun connectDevice(uid: String, emitter: Emitter<DeviceEvent>) {
-        if (uid != virtualDevice.source.uid) return
+        val device = devices.find(uid) ?: return
         // One scope per connection; cancelling it tears this connection down.
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-        virtualDevice.connect(emitter, scope)
+        device.connect(emitter, scope)
         emitter.setCancellable { scope.cancel() }
     }
 
