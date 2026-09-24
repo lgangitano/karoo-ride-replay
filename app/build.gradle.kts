@@ -87,6 +87,8 @@ dependencies {
     // https://central.sonatype.com/artifact/com.garmin/fit
     implementation("com.garmin:fit:21.205.0")
 
-    // JVM unit tests (engine loop-wrap logic).
+    // JVM unit tests (engine logic, virtual-device lifecycle).
     testImplementation("junit:junit:4.13.2")
+    // Virtual time for the device lifecycle tests (800 ms search delay, state changes).
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
 }
