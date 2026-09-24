@@ -11,6 +11,8 @@ import io.hammerhead.karooext.models.Device
 import io.hammerhead.karooext.models.DeviceEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -42,7 +44,7 @@ class KarooRideReplayExtension : KarooExtension(EXTENSION_ID, BuildConfig.VERSIO
     val replayEngine: ReplayEngine = ReplayEngine()
 
     private val virtualDevice: ReplayVirtualDevice by lazy {
-        ReplayVirtualDevice(extension, replayEngine)
+        ReplayVirtualDevice.combined(extension, replayEngine.currentRecord)
     }
 
     private var mockLocation: MockLocationProvider? = null
@@ -87,8 +89,10 @@ class KarooRideReplayExtension : KarooExtension(EXTENSION_ID, BuildConfig.VERSIO
 
     override fun connectDevice(uid: String, emitter: Emitter<DeviceEvent>) {
         if (uid != virtualDevice.source.uid) return
-        val job = virtualDevice.connect(emitter)
-        emitter.setCancellable { job.cancel() }
+        // One scope per connection; cancelling it tears this connection down.
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        virtualDevice.connect(emitter, scope)
+        emitter.setCancellable { scope.cancel() }
     }
 
     companion object {
