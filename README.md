@@ -6,7 +6,7 @@ Open-source ride-simulation extension for Hammerhead Karoo cycling computers. Re
   <img src="docs/playback-screen.png" alt="Karoo Ride Replay — Playback screen" width="320" />
 </p>
 
-> Status: beta (v0.9.0). UI redesigned to the Hammerhead Karoo look, mock GPS scoped to active replays, and validated on-device.
+> Status: v1.0.0. Karoo-native UI, mock GPS scoped to active replays, and per-sensor virtual devices with dropout simulation.
 
 ## Why
 
@@ -44,13 +44,13 @@ Karoo Ride Replay publishes four virtual sensors, one per data channel: *Replay 
 
 **New install.** Pair once, on the Karoo:
 
-1. Settings → **Sensors** → **Add Sensor**.
+1. Open **Sensors** and tap **Add Sensor**.
 2. Pair *Replay Power*, *Replay HR*, *Replay Cadence* and *Replay Speed*. Pair only the ones you need. A channel you don't pair is simply not replayed.
 
 **Upgrading from v0.9.0-beta or earlier.** Earlier versions published a single combined sensor called *Karoo Ride Replay*. That sensor no longer connects, so swap it for the four new ones:
 
-1. Settings → **Sensors** → open *Karoo Ride Replay* and remove it.
-2. Settings → **Sensors** → **Add Sensor**, and pair *Replay Power*, *Replay HR*, *Replay Cadence* and *Replay Speed*.
+1. Open **Sensors** and remove the existing *Karoo Ride Replay* sensor.
+2. In **Sensors**, tap **Add Sensor** and pair *Replay Power*, *Replay HR*, *Replay Cadence* and *Replay Speed*.
 
 If you still have the per-sensor pairings from v0.1.2-alpha, there's nothing to do. The four sensors use the same IDs, so they reconnect on their own.
 
@@ -67,7 +67,7 @@ The app is two screens — **Select Ride** and **Replay** — styled to match Ka
 7. **To ride** — the full-width bar minimizes to the Karoo's normal ride view while playback keeps streaming (mock GPS stays active), so your other extensions see real-looking sensor + GPS data — and you can record a ride against the replay.
 8. **Back** — the bottom-left chevron (or the hardware back button) returns to the picker; playback pauses and keeps its position (so re-selecting the ride resumes where you left off), and mock GPS is released so the Karoo returns to its real GPS.
 
-## Features (v0.9.0)
+## Features (v1.0.0)
 
 - **Karoo-native UI** — the Hammerhead Visual Data Field System (pure-black, mono numerals, pill controls), one pane, no scrolling
 - **Ride library** — scans Karoo's `FitFiles/`, leads with write-time + parsed duration/distance/size, hides near-empty recordings

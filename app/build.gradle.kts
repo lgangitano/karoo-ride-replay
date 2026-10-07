@@ -14,8 +14,8 @@ android {
         applicationId = "it.gangitano.karooridereplay"
         minSdk = 24
         targetSdk = 37
-        versionCode = 6
-        versionName = "0.9.0-beta"
+        versionCode = 7
+        versionName = "1.0.0"
     }
 
     buildTypes {

@@ -9,7 +9,7 @@
 
     <!-- scansDevices="true" is REQUIRED for Karoo OS to invoke startScan()
          on our service; without it the virtual sensors never appear in the
-         Settings → Sensors → Add Sensor UI. Confirmed by comparing against
+         Sensors → Add Sensor page. Confirmed by comparing against
          lockevod/Karoo-KPower's extension_info.xml + Hammerhead's sample
          extension, both of which declare it. -->
 
