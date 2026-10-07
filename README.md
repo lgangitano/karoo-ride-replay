@@ -38,12 +38,28 @@ adb install -r karoo-ride-replay.apk
 
 Then the same one-time setup as Karoo 3 — grant **All files access** on first launch, and designate the app as **mock location** in Developer Options.
 
+## Set up the sensors
+
+Karoo Ride Replay publishes four virtual sensors, one per data channel: *Replay Power*, *Replay HR*, *Replay Cadence* and *Replay Speed*. Each is a separate sensor because the Karoo tracks connection status per sensor. That's what lets you drop out one channel (say, HR) while the others keep streaming.
+
+**New install.** Pair once, on the Karoo:
+
+1. Settings → **Sensors** → **Add Sensor**.
+2. Pair *Replay Power*, *Replay HR*, *Replay Cadence* and *Replay Speed*. Pair only the ones you need. A channel you don't pair is simply not replayed.
+
+**Upgrading from v0.9.0-beta or earlier.** Earlier versions published a single combined sensor called *Karoo Ride Replay*. That sensor no longer connects, so swap it for the four new ones:
+
+1. Settings → **Sensors** → open *Karoo Ride Replay* and remove it.
+2. Settings → **Sensors** → **Add Sensor**, and pair *Replay Power*, *Replay HR*, *Replay Cadence* and *Replay Speed*.
+
+If you still have the per-sensor pairings from v0.1.2-alpha, there's nothing to do. The four sensors use the same IDs, so they reconnect on their own.
+
 ## Using it
 
 The app is two screens — **Select Ride** and **Replay** — styled to match Karoo OS.
 
 1. **Pick a ride** — the picker lists FIT files from `FitFiles/` and `Download/`, newest first. Each row leads with the ride's write-time and a parsed `duration · distance · size`, and the currently-loaded ride is highlighted. Near-empty files (aborted/quick test recordings with no real ride in them) are filtered out. Tap a row to open it straight in Replay. Tap the **star** to pin a ride to the top of the list — pins persist across restarts.
-2. **In Karoo Settings → Sensors → Add Sensor**, pair the four virtual sensors (*Replay Power*, *Replay HR*, *Replay Cadence*, *Replay Speed*) once. Upgrading from v0.9.0-beta? Remove the old combined *Karoo Ride Replay* sensor — it no longer connects.
+2. **Pair the sensors** once, as described in [Set up the sensors](#set-up-the-sensors). Upgrading from v0.9.0-beta? Remove the old *Karoo Ride Replay* sensor first.
 3. **Hit Play.** The Replay screen fits one pane: a large current-time readout, a draggable timeline, transport (‹10s / Play-Pause / 10s›), and a small strip confirming the live Power/HR/Speed/Cadence stream. Tap a sensor in the strip to simulate a dropout: it cycles streaming → searching (`···`) → missing (`--`) → streaming, and the Karoo shows that sensor's connection status to match.
 4. **Scrub the timeline** — drag or tap anywhere to seek to that point of the ride.
 5. **Mark / Loop / Clear** — drop bookmarks, then toggle **Loop** to repeat between the outer two marks (handy for regression-testing a segment). Scrubbing out of the marked window releases the loop.
