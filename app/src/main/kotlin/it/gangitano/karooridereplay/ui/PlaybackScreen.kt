@@ -58,8 +58,8 @@ internal const val STEP_FORWARD_LABEL = "10s ›"
  *
  * Playback is the hero: a big current-time readout, a draggable/tappable
  * timeline carrying yellow bookmark ticks, transport (‹10s / Play-Pause / 10s›),
- * a Mark/Loop/Clear row, a speed selector, a sensor strip (tap-to-cycle each
- * sensor's state when Separate sensors is on),
+ * a Mark/Loop/Clear row, a speed selector, a sensor strip (tap a readout to
+ * cycle that sensor's simulated state),
  * and a persistent full-width yellow To-ride bar.
  *
  * Two distinct exit paths, unchanged from before the redesign:
@@ -76,7 +76,6 @@ fun PlaybackScreen(viewModel: ReplayViewModel, onBack: () -> Unit) {
     val loop by viewModel.loop.collectAsState()
     val currentRecord by viewModel.currentRecord.collectAsState()
     val sensorStates by viewModel.sensorStates.collectAsState()
-    val separateSensors by viewModel.separateSensors.collectAsState()
     val selectedRide by viewModel.selectedRide.collectAsState()
     val loadStatus by viewModel.loadStatus.collectAsState()
     val totalSeconds = viewModel.totalSeconds
@@ -232,16 +231,19 @@ fun PlaybackScreen(viewModel: ReplayViewModel, onBack: () -> Unit) {
             modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            // Separate sensors: each readout is its sensor's control. Combined:
-            // display-only, and always streaming (the combined device ignores states).
-            fun stateOf(sensor: Sensor) =
-                if (separateSensors) sensorStates.getValue(sensor) else SensorState.STREAMING
-            fun cycle(sensor: Sensor): (() -> Unit)? =
-                if (separateSensors) ({ viewModel.cycleSensorState(sensor) }) else null
-            StreamStat("PWR", currentRecord?.power?.let { "$it" }, stateOf(Sensor.POWER), cycle(Sensor.POWER))
-            StreamStat("HR", currentRecord?.heartRate?.let { "$it" }, stateOf(Sensor.HEART_RATE), cycle(Sensor.HEART_RATE))
-            StreamStat("SPD", currentRecord?.speed?.let { formatOneDecimal(it * 3.6) }, stateOf(Sensor.SPEED), cycle(Sensor.SPEED))
-            StreamStat("CAD", currentRecord?.cadence?.let { "$it" }, stateOf(Sensor.CADENCE), cycle(Sensor.CADENCE))
+            // Each readout is its sensor's control: tap to cycle its simulated state.
+            StreamStat("PWR", currentRecord?.power?.let { "$it" }, sensorStates.getValue(Sensor.POWER)) {
+                viewModel.cycleSensorState(Sensor.POWER)
+            }
+            StreamStat("HR", currentRecord?.heartRate?.let { "$it" }, sensorStates.getValue(Sensor.HEART_RATE)) {
+                viewModel.cycleSensorState(Sensor.HEART_RATE)
+            }
+            StreamStat("SPD", currentRecord?.speed?.let { formatOneDecimal(it * 3.6) }, sensorStates.getValue(Sensor.SPEED)) {
+                viewModel.cycleSensorState(Sensor.SPEED)
+            }
+            StreamStat("CAD", currentRecord?.cadence?.let { "$it" }, sensorStates.getValue(Sensor.CADENCE)) {
+                viewModel.cycleSensorState(Sensor.CADENCE)
+            }
         }
 
         // ── To-ride bar (persistent primary action) ──────────────────────────
@@ -302,12 +304,12 @@ private fun StateChip(state: ReplayEngine.State) {
 
 /**
  * One sensor readout. Streaming shows the value; searching an amber pulsing
- * "···"; missing a grey "--". Tappable when [onTap] is set (Separate sensors).
+ * "···"; missing a grey "--". Tapping it calls [onTap].
  */
 @Composable
-private fun StreamStat(label: String, value: String?, state: SensorState, onTap: (() -> Unit)?) {
+private fun StreamStat(label: String, value: String?, state: SensorState, onTap: () -> Unit) {
     Row(
-        modifier = if (onTap != null) Modifier.clickable(onClick = onTap) else Modifier,
+        modifier = Modifier.clickable(onClick = onTap),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(label, style = Karoo.dataSm.copy(fontSize = 15.sp, color = Karoo.Grey3))

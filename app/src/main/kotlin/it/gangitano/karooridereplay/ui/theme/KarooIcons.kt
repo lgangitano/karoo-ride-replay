@@ -7,9 +7,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathBuilder
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
 
 /**
  * The handful of single-color glyphs the redesign needs, drawn as [ImageVector]s
@@ -71,19 +68,6 @@ object KarooIcons {
         arcTo(7f, 7f, 0f, true, false, 12f, 19f)
         // arrowhead pointing into the gap at 3 o'clock
         moveTo(15.5f, 9f); lineTo(19f, 12f); lineTo(20f, 8.2f)
-    }
-
-    /** Settings gear: a ring and hub with eight teeth. */
-    val Gear: ImageVector = stroked("gear") {
-        // ring (r = 6) and hub (r = 2.5)
-        moveTo(12f, 6f); arcTo(6f, 6f, 0f, true, true, 11.99f, 6f)
-        moveTo(12f, 9.5f); arcTo(2.5f, 2.5f, 0f, true, true, 11.99f, 9.5f)
-        // teeth: eight radial strokes from the ring outward
-        for (i in 0 until 8) {
-            val a = i * PI / 4
-            moveTo(12f + 6f * cos(a).toFloat(), 12f + 6f * sin(a).toFloat())
-            lineTo(12f + 9f * cos(a).toFloat(), 12f + 9f * sin(a).toFloat())
-        }
     }
 
     private fun filled(name: String, block: PathBuilder.() -> Unit): ImageVector =
