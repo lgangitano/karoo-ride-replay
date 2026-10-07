@@ -4,22 +4,18 @@ import it.gangitano.karooridereplay.replay.ReplayEngine
 import it.gangitano.karooridereplay.replay.Sensor
 
 /**
- * The five virtual devices the extension can publish: the combined one and one
- * per sensor. The "Separate sensors" switch decides only what the Add Sensor
- * scan offers; a connect accepts all five, because the Karoo remembers pairings
- * on its own and flipping the switch must never strand a paired sensor.
+ * The four virtual devices the extension publishes, one per [Sensor]. Every
+ * Add Sensor scan offers all four; a connect looks its uid up in a map built
+ * once, so unknown uids (e.g. the retired combined `replay-all`) are ignored.
  */
 class ReplayDevices(extensionId: String, engine: ReplayEngine) {
 
-    private val combined = ReplayVirtualDevice.combined(extensionId, engine.currentRecord)
-
-    private val separate = Sensor.entries.map {
-        ReplayVirtualDevice.separate(extensionId, it, engine.currentRecord, engine.sensorStates)
+    /** In [Sensor] order: power, heart rate, cadence, speed. */
+    val all: List<ReplayVirtualDevice> = Sensor.entries.map {
+        ReplayVirtualDevice(extensionId, it, engine.currentRecord, engine.sensorStates)
     }
 
-    fun offered(separateSensors: Boolean): List<ReplayVirtualDevice> =
-        if (separateSensors) separate else listOf(combined)
+    private val byUid: Map<String, ReplayVirtualDevice> = all.associateBy { it.source.uid }
 
-    fun find(uid: String): ReplayVirtualDevice? =
-        (listOf(combined) + separate).firstOrNull { it.source.uid == uid }
+    fun find(uid: String): ReplayVirtualDevice? = byUid[uid]
 }

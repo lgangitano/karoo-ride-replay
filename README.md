@@ -43,8 +43,8 @@ Then the same one-time setup as Karoo 3 — grant **All files access** on first 
 The app is two screens — **Select Ride** and **Replay** — styled to match Karoo OS.
 
 1. **Pick a ride** — the picker lists FIT files from `FitFiles/` and `Download/`, newest first. Each row leads with the ride's write-time and a parsed `duration · distance · size`, and the currently-loaded ride is highlighted. Near-empty files (aborted/quick test recordings with no real ride in them) are filtered out. Tap a row to open it straight in Replay. Tap the **star** to pin a ride to the top of the list — pins persist across restarts.
-2. **In Karoo Settings → Sensors → Add Sensor**, pair the virtual sensor (Power / HR / Cadence / Speed) once.
-3. **Hit Play.** The Replay screen fits one pane: a large current-time readout, a draggable timeline, transport (‹10s / Play-Pause / 10s›), and a small strip confirming the live Power/HR/Speed/Cadence stream.
+2. **In Karoo Settings → Sensors → Add Sensor**, pair the four virtual sensors (*Replay Power*, *Replay HR*, *Replay Cadence*, *Replay Speed*) once. Upgrading from v0.9.0-beta? Remove the old combined *Karoo Ride Replay* sensor — it no longer connects.
+3. **Hit Play.** The Replay screen fits one pane: a large current-time readout, a draggable timeline, transport (‹10s / Play-Pause / 10s›), and a small strip confirming the live Power/HR/Speed/Cadence stream. Tap a sensor in the strip to simulate a dropout: it cycles streaming → searching (`···`) → missing (`--`) → streaming, and the Karoo shows that sensor's connection status to match.
 4. **Scrub the timeline** — drag or tap anywhere to seek to that point of the ride.
 5. **Mark / Loop / Clear** — drop bookmarks, then toggle **Loop** to repeat between the outer two marks (handy for regression-testing a segment). Scrubbing out of the marked window releases the loop.
 6. **Speed** — replay at 1× / 2× / 5× / 10× to exercise a long ride quickly.
@@ -61,7 +61,8 @@ The app is two screens — **Select Ride** and **Replay** — styled to match Ka
 - **Mock GPS injection** via Android `LocationManager` — Karoo OS sees position move along the recorded route
 - **GPS scoped to active replays** — the mock provider is registered only while a replay is playing and released when you exit, so the Karoo uses real GPS whenever nothing is replaying (no dev-settings dance, no app restart)
 - **Holds the GPS fix when stationary/paused** — within a replay, a ~1 Hz heartbeat re-publishes the last position through stopped/positionless stretches (and pauses), so consumers don't drop the fix
-- **Virtual sensor devices** for Power, Heart Rate, Cadence, Speed via the `karoo-ext` Device API
+- **Virtual sensor devices** — one each for Power, Heart Rate, Cadence, Speed via the `karoo-ext` Device API
+- **Sensor dropout simulation** — tap a sensor to set it searching or missing while the others keep streaming
 - **Variable playback speed** — 1× / 2× / 5× / 10×
 - **State survives round-trips** — reopening from the Extensions list (single-instance, so Open resumes rather than restarts), or backing out and re-selecting a ride, resumes in place
 

@@ -23,13 +23,11 @@ import androidx.navigation.compose.rememberNavController
 import it.gangitano.karooridereplay.ui.PlaybackScreen
 import it.gangitano.karooridereplay.ui.ReplayViewModel
 import it.gangitano.karooridereplay.ui.RideSelectorScreen
-import it.gangitano.karooridereplay.ui.SettingsScreen
 import it.gangitano.karooridereplay.ui.theme.KarooTheme
 
 /**
- * Single-activity host for the Compose screens: ride picker → playback
- * control (the former replay-config step is folded into playback), plus
- * settings from the picker. ViewModel
+ * Single-activity host for the two Compose screens: ride picker → playback
+ * control (the former replay-config step is folded into playback). ViewModel
  * scoped to the activity so both screens share the same state.
  *
  * On launch, requests storage-read permission so [it.gangitano.karooridereplay
@@ -63,8 +61,7 @@ class MainActivity : ComponentActivity() {
                                 onRideSelected = {
                                     viewModel.selectRide(it)
                                     nav.navigate("playback")
-                                },
-                                onOpenSettings = { nav.navigate("settings") { launchSingleTop = true } },
+                                }
                             )
                         }
                         composable("playback") {
@@ -79,9 +76,6 @@ class MainActivity : ComponentActivity() {
                                     nav.popBackStack("rides", inclusive = false)
                                 }
                             )
-                        }
-                        composable("settings") {
-                            SettingsScreen(viewModel = viewModel, onBack = { nav.popBackStack() })
                         }
                     }
                     // Reopened (e.g. Extensions → Open) while a replay is still

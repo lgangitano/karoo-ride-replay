@@ -66,12 +66,11 @@ class ReplayVirtualDeviceTest {
         runCurrent()
     }
 
-    private fun separate(sensor: Sensor) =
-        ReplayVirtualDevice.separate(EXTENSION_ID, sensor, records, states)
+    private fun device(sensor: Sensor) = ReplayVirtualDevice(EXTENSION_ID, sensor, records, states)
 
     @Test fun `heart rate walks streaming, searching, missing and back`() = runTest {
         records.value = FitRecord(timestampMs = 0L, heartRate = 120)
-        connect(separate(Sensor.HEART_RATE))
+        connect(device(Sensor.HEART_RATE))
 
         set(Sensor.HEART_RATE, SensorState.SEARCHING); runCurrent()
         records.value = FitRecord(timestampMs = 1000L, heartRate = 121); runCurrent()
@@ -93,7 +92,7 @@ class ReplayVirtualDeviceTest {
     @Test fun `connecting while missing goes straight to disconnected`() = runTest {
         set(Sensor.HEART_RATE, SensorState.MISSING)
         records.value = FitRecord(timestampMs = 0L, heartRate = 120)
-        connect(separate(Sensor.HEART_RATE))
+        connect(device(Sensor.HEART_RATE))
         records.value = FitRecord(timestampMs = 1000L, heartRate = 121); runCurrent()
 
         assertEquals(listOf("SEARCHING", "DISCONNECTED"), trace())
@@ -101,7 +100,7 @@ class ReplayVirtualDeviceTest {
 
     @Test fun `rapid taps land on the latest state`() = runTest {
         records.value = FitRecord(timestampMs = 0L, heartRate = 120)
-        connect(separate(Sensor.HEART_RATE))
+        connect(device(Sensor.HEART_RATE))
 
         set(Sensor.HEART_RATE, SensorState.SEARCHING)
         set(Sensor.HEART_RATE, SensorState.MISSING)
@@ -116,7 +115,7 @@ class ReplayVirtualDeviceTest {
 
     @Test fun `another sensor's state leaves this device alone`() = runTest {
         records.value = FitRecord(timestampMs = 0L, heartRate = 120)
-        connect(separate(Sensor.HEART_RATE))
+        connect(device(Sensor.HEART_RATE))
         set(Sensor.POWER, SensorState.MISSING); runCurrent()
         records.value = FitRecord(timestampMs = 1000L, heartRate = 121); runCurrent()
 
@@ -128,7 +127,7 @@ class ReplayVirtualDeviceTest {
 
     @Test fun `streaming with no value sends status but no data`() = runTest {
         records.value = FitRecord(timestampMs = 0L, power = 200)
-        connect(separate(Sensor.HEART_RATE))
+        connect(device(Sensor.HEART_RATE))
         records.value = FitRecord(timestampMs = 1000L, power = 210); runCurrent()
 
         assertEquals(listOf("SEARCHING", "CONNECTED", "battery"), trace())
@@ -136,7 +135,7 @@ class ReplayVirtualDeviceTest {
 
     @Test fun `first speed tick after a dropout sends no distance delta`() = runTest {
         records.value = FitRecord(timestampMs = 0L, speed = 5.0, distance = 0.0)
-        connect(separate(Sensor.SPEED))
+        connect(device(Sensor.SPEED))
         records.value = FitRecord(timestampMs = 1000L, speed = 5.0, distance = 5.0); runCurrent()
 
         set(Sensor.SPEED, SensorState.SEARCHING); runCurrent()
@@ -159,38 +158,33 @@ class ReplayVirtualDeviceTest {
         )
     }
 
-    @Test fun `combined device streams every sensor`() = runTest {
-        records.value = FitRecord(timestampMs = 0L, distance = 0.0)
-        connect(ReplayVirtualDevice.combined(EXTENSION_ID, records))
-        records.value = FitRecord(
-            timestampMs = 1000L, power = 200, heartRate = 120, cadence = 90,
-            speed = 5.0, distance = 5.0,
+    @Test fun `each device streams only its own sensor`() = runTest {
+        val record = FitRecord(
+            timestampMs = 0L, power = 200, heartRate = 120, cadence = 90, speed = 5.0, distance = 0.0,
         )
+        records.value = record
+        // Connect both before the search delay elapses, so their traces line up.
+        device(Sensor.POWER).connect(emitter, backgroundScope)
+        device(Sensor.CADENCE).connect(emitter, backgroundScope)
+        advanceTimeBy(SIM_SEARCH_DELAY_MS)
         runCurrent()
 
         assertEquals(
             listOf(
-                "SEARCHING", "CONNECTED", "battery",
-                "${DataType.Source.POWER}=200.0",
-                "$hr=120.0",
-                "${DataType.Source.CADENCE}=90.0",
-                "$spd=5.0",
-                "$dist=5.0",
+                "SEARCHING", "SEARCHING",
+                "CONNECTED", "battery", "${DataType.Source.POWER}=200.0",
+                "CONNECTED", "battery", "${DataType.Source.CADENCE}=90.0",
             ),
             trace(),
         )
     }
 
     @Test fun `each device declares its own data types and uid`() {
-        assertEquals(listOf(hr), separate(Sensor.HEART_RATE).source.dataTypes)
-        assertEquals("replay-hr", separate(Sensor.HEART_RATE).source.uid)
-        assertEquals(listOf(spd, dist), separate(Sensor.SPEED).source.dataTypes)
-        val combined = ReplayVirtualDevice.combined(EXTENSION_ID, records).source
-        assertEquals(ReplayVirtualDevice.COMBINED_UID, combined.uid)
-        assertEquals(
-            listOf(DataType.Source.POWER, hr, DataType.Source.CADENCE, spd, dist),
-            combined.dataTypes,
-        )
+        assertEquals(listOf(hr), device(Sensor.HEART_RATE).source.dataTypes)
+        assertEquals("replay-hr", device(Sensor.HEART_RATE).source.uid)
+        assertEquals(listOf(spd, dist), device(Sensor.SPEED).source.dataTypes)
+        assertEquals(listOf(DataType.Source.POWER), device(Sensor.POWER).source.dataTypes)
+        assertEquals(listOf(DataType.Source.CADENCE), device(Sensor.CADENCE).source.dataTypes)
     }
 
     private companion object {

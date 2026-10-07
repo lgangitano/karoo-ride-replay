@@ -1,7 +1,6 @@
 package it.gangitano.karooridereplay.extension
 
 import it.gangitano.karooridereplay.BuildConfig
-import it.gangitano.karooridereplay.data.ReplaySettings
 import it.gangitano.karooridereplay.mocklocation.MockLocationProvider
 import it.gangitano.karooridereplay.replay.ReplayEngine
 import it.gangitano.karooridereplay.vdevice.ReplayDevices
@@ -23,18 +22,16 @@ import kotlinx.coroutines.launch
  *
  * Hosts the long-lived singletons:
  *   - [ReplayEngine] — the playback state machine, driven by the UI
- *   - [ReplayDevices] — the combined virtual sensor (Power, HR, Cadence,
- *     Speed, and the per-tick distance delta `TYPE_SPD_DISTANCE_DIFF_ID`,
- *     paired once) and one device per sensor for the "Separate sensors"
- *     setting
+ *   - [ReplayDevices] — one virtual device per sensor (Power, HR, Cadence,
+ *     Speed; the speed device also carries the per-tick distance delta
+ *     `TYPE_SPD_DISTANCE_DIFF_ID`), so each can drop out on its own
  *   - [MockLocationProvider] — pushes the engine's GPS coordinates into
  *     Android's `LocationManager` as test-provider locations
  *
  * Karoo-ext lifecycle:
- *   - [startScan] emits the combined device, or the four separate ones when
- *     "Separate sensors" is on, when the user opens Add Sensor.
+ *   - [startScan] emits the four devices when the user opens Add Sensor.
  *   - [connectDevice] dispatches the pair to [ReplayVirtualDevice.connect]
- *     for any of the five uids, whichever way the switch is set.
+ *     by uid; unknown uids are ignored.
  *
  * Other components access the running extension via the [instance]
  * companion (the common Karoo-extension singleton pattern).
@@ -46,8 +43,6 @@ class KarooRideReplayExtension : KarooExtension(EXTENSION_ID, BuildConfig.VERSIO
     val replayEngine: ReplayEngine = ReplayEngine()
 
     private val devices: ReplayDevices by lazy { ReplayDevices(extension, replayEngine) }
-
-    private val settings: ReplaySettings by lazy { ReplaySettings(applicationContext) }
 
     private var mockLocation: MockLocationProvider? = null
 
@@ -84,8 +79,7 @@ class KarooRideReplayExtension : KarooExtension(EXTENSION_ID, BuildConfig.VERSIO
         val job = scope.launch {
             // Brief "scanning" pause for UX — same as KPower
             delay(SCAN_ANNOUNCE_DELAY_MS)
-            // Read the switch per scan, so flipping it applies to the next Add Sensor.
-            devices.offered(settings.separateSensors).forEach { emitter.onNext(it.source) }
+            devices.all.forEach { emitter.onNext(it.source) }
         }
         emitter.setCancellable { job.cancel() }
     }

@@ -19,20 +19,16 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
- * A virtual device that publishes one or more replayed sensors — built either
- * as the single combined device (all four sensors, the default) or as one
- * device per sensor (the "Separate sensors" setting).
+ * A virtual device that publishes one replayed [sensor], following that
+ * sensor's entry in the engine's simulated [states].
  *
- * Why separate devices at all: karoo-ext connection status is per device, not
+ * Why one device per sensor: karoo-ext connection status is per device, not
  * per data type. Only a device of its own can show HR searching while power
- * keeps streaming. The combined device stays the default because pairing four
- * entries in Settings → Sensors is friction when every channel should just be
- * populated from the FIT (timklge's review, awesome-karoo PR #43).
+ * keeps streaming.
  *
  * Why `TYPE_SPD_DISTANCE_DIFF_ID`: Karoo has special-case handling for speed
  * sensors. Emitting just `DataType.Source.SPEED` does not make Karoo's ride
@@ -40,28 +36,28 @@ import kotlinx.coroutines.launch
  * GPS. Pairing the SPEED emission with a per-tick distance-delta on
  * `TYPE_SPD_DISTANCE_DIFF_ID` is the documented Hammerhead pattern (used in
  * timklge's karoo-wattspeed) for "treat my virtual device as a real
- * speedometer." Any device carrying [Sensor.SPEED] carries the delta too.
+ * speedometer." The speed device carries the delta alongside SPEED.
  *
- * Lifecycle (KPower-style): SEARCHING for 800 ms, then follow [state]:
- * streaming → CONNECTED + battery GOOD + data points as [records] emits;
+ * Lifecycle (KPower-style): SEARCHING for 800 ms, then follow the sensor's
+ * state: streaming → CONNECTED + battery GOOD + data points as [records] emits;
  * searching → SEARCHING; missing → DISCONNECTED. Cancelling the returned
  * [Job] (or its scope) tears the connection down.
  */
-class ReplayVirtualDevice private constructor(
+class ReplayVirtualDevice(
     extensionId: String,
-    uid: String,
-    displayName: String,
-    private val sensors: List<Sensor>,
+    private val sensor: Sensor,
     private val records: Flow<FitRecord?>,
-    private val state: Flow<SensorState>,
+    states: Flow<Map<Sensor, SensorState>>,
 ) {
+
+    private val state: Flow<SensorState> = states.map { it.getValue(sensor) }.distinctUntilChanged()
 
     val source: Device = Device(
         extension = extensionId,
-        uid = uid,
-        dataTypes = sensors.map { it.dataTypeId } +
-            if (Sensor.SPEED in sensors) listOf(TYPE_SPD_DISTANCE_DIFF_ID) else emptyList(),
-        displayName = displayName,
+        uid = sensor.deviceUid,
+        dataTypes = listOf(sensor.dataTypeId) +
+            if (sensor == Sensor.SPEED) listOf(TYPE_SPD_DISTANCE_DIFF_ID) else emptyList(),
+        displayName = sensor.displayName,
     )
 
     fun connect(emitter: Emitter<DeviceEvent>, scope: CoroutineScope): Job = scope.launch {
@@ -101,11 +97,9 @@ class ReplayVirtualDevice private constructor(
         records.collect { record ->
             if (record == null) return@collect
 
-            for (sensor in sensors) {
-                sensor.valueIn(record)?.let { emit(emitter, sensor.dataTypeId, sensor.field, it) }
-            }
+            sensor.valueIn(record)?.let { emit(emitter, sensor.dataTypeId, sensor.field, it) }
 
-            if (Sensor.SPEED in sensors) {
+            if (sensor == Sensor.SPEED) {
                 val distanceDiffM = computeDistanceDiff(record, prevDistanceM, prevTimeMs)
                 if (distanceDiffM > 0.0) {
                     emit(emitter, TYPE_SPD_DISTANCE_DIFF_ID, DataType.Field.DISTANCE, distanceDiffM)
@@ -154,35 +148,9 @@ class ReplayVirtualDevice private constructor(
     }
 
     companion object {
-        const val COMBINED_UID = "replay-all"
         /** Karoo's special-case distance-delta data type id for speed sensors. */
         const val TYPE_SPD_DISTANCE_DIFF_ID = "TYPE_SPD_DISTANCE_DIFF_ID"
         internal const val SIM_SEARCH_DELAY_MS = 800L
-
-        /** All four sensors on one device; ignores sensor states and always streams. */
-        fun combined(extensionId: String, records: Flow<FitRecord?>) = ReplayVirtualDevice(
-            extensionId = extensionId,
-            uid = COMBINED_UID,
-            displayName = "Karoo Ride Replay",
-            sensors = Sensor.entries,
-            records = records,
-            state = flowOf(SensorState.STREAMING),
-        )
-
-        /** One sensor on its own device, following that sensor's entry in [states]. */
-        fun separate(
-            extensionId: String,
-            sensor: Sensor,
-            records: Flow<FitRecord?>,
-            states: Flow<Map<Sensor, SensorState>>,
-        ) = ReplayVirtualDevice(
-            extensionId = extensionId,
-            uid = sensor.deviceUid,
-            displayName = sensor.displayName,
-            sensors = listOf(sensor),
-            records = records,
-            state = states.map { it.getValue(sensor) }.distinctUntilChanged(),
-        )
     }
 }
 
@@ -202,7 +170,10 @@ private val Sensor.field: String
         Sensor.SPEED -> DataType.Field.SPEED
     }
 
-/** The uid the Karoo stores when this sensor's own device is paired. */
+/**
+ * The uid the Karoo stores when this sensor's device is paired. Same uids as
+ * v0.1.2-alpha's per-sensor devices, so those pairings reconnect.
+ */
 internal val Sensor.deviceUid: String
     get() = when (this) {
         Sensor.POWER -> "replay-power"
