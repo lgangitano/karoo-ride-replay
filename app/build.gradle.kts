@@ -1,18 +1,19 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
     namespace = "it.gangitano.karooridereplay"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "it.gangitano.karooridereplay"
-        minSdk = 23
-        targetSdk = 35
+        minSdk = 24
+        targetSdk = 37
         versionCode = 6
         versionName = "0.9.0-beta"
     }
@@ -24,20 +25,9 @@ android {
         }
     }
 
-    applicationVariants.all {
-        outputs.all {
-            val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-            output.outputFileName = "karoo-ride-replay.apk"
-        }
-    }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = "17"
     }
 
     buildFeatures {
@@ -56,39 +46,57 @@ android {
     }
 }
 
+// AGP 9 has no public API for the APK file name; the legacy variant API this
+// used is gone. VariantOutputImpl is internal, but it is the documented-by-usage
+// way to keep the stable `karoo-ride-replay.apk` name the README and releases use.
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            (output as com.android.build.api.variant.impl.VariantOutputImpl)
+                .outputFileName.set("karoo-ride-replay.apk")
+        }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_17
+    }
+}
+
 dependencies {
-    // Karoo Extension SDK — 1.1.8 for the CLIMB / NavigationState APIs that
+    // Karoo Extension SDK — 1.1.8+ for the CLIMB / NavigationState APIs that
     // consumer extensions are tested against.
-    implementation("io.hammerhead:karoo-ext:1.1.8")
+    implementation("io.hammerhead:karoo-ext:1.1.9")
 
     // Kotlin
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
     // AndroidX Core
-    implementation("androidx.core:core-ktx:1.15.0")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
-    implementation("androidx.activity:activity-compose:1.9.3")
+    implementation("androidx.core:core-ktx:1.19.1")
+    implementation("androidx.appcompat:appcompat:1.8.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
+    implementation("androidx.activity:activity-compose:1.13.0")
 
     // Compose
-    implementation(platform("androidx.compose:compose-bom:2025.01.00"))
+    implementation(platform("androidx.compose:compose-bom:2026.09.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
 
     // Navigation (for the simple multi-screen UI)
-    implementation("androidx.navigation:navigation-compose:2.8.5")
+    implementation("androidx.navigation:navigation-compose:2.10.2")
 
     // FIT parsing — Garmin's official open FIT SDK, published to Maven
     // Central. Records, GPS coords, power, HR, cadence, speed at 1 Hz.
     // https://central.sonatype.com/artifact/com.garmin/fit
-    implementation("com.garmin:fit:21.205.0")
+    implementation("com.garmin:fit:21.218.0")
 
     // JVM unit tests (engine logic, virtual-device lifecycle).
     testImplementation("junit:junit:4.13.2")
     // Virtual time for the device lifecycle tests (800 ms search delay, state changes).
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
 }
