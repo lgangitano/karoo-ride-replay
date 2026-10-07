@@ -1,8 +1,8 @@
 package it.gangitano.karooridereplay.ui
 
-import android.app.Activity
 import android.os.SystemClock
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -38,7 +38,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -82,7 +81,7 @@ fun PlaybackScreen(viewModel: ReplayViewModel, onBack: () -> Unit) {
     val selectedPath = selectedRide?.file?.absolutePath
     val playbackReady = isPlaybackReady(loadStatus, selectedPath)
 
-    val activity = LocalContext.current as? Activity
+    val activity = LocalActivity.current
     BackHandler { onBack() }
 
     Column(modifier = Modifier.fillMaxSize().background(Karoo.Bg)) {

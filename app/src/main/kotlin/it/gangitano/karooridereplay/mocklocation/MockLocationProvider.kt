@@ -161,7 +161,9 @@ class MockLocationProvider(
     private fun installProviders() {
         providers.forEach { provider ->
             try {
-                @Suppress("DEPRECATION") // Criteria args needed for older API levels
+                // Criteria args needed for older API levels. Lint wants the API 31
+                // ProviderProperties constants, which carry the same values (1, 1).
+                @Suppress("DEPRECATION", "WrongConstant")
                 locationManager.addTestProvider(
                     provider,
                     false, // requiresNetwork
