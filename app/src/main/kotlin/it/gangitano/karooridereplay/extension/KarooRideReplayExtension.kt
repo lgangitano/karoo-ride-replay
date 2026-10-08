@@ -3,6 +3,9 @@ package it.gangitano.karooridereplay.extension
 import android.content.IntentFilter
 import androidx.core.content.ContextCompat
 import it.gangitano.karooridereplay.BuildConfig
+import it.gangitano.karooridereplay.fields.ReplayDataType
+import it.gangitano.karooridereplay.fields.nextSpeed
+import it.gangitano.karooridereplay.fields.skipTarget
 import it.gangitano.karooridereplay.mocklocation.MockLocationProvider
 import it.gangitano.karooridereplay.remote.ACTION_EXIT
 import it.gangitano.karooridereplay.remote.ACTION_LOAD
@@ -65,7 +68,7 @@ class KarooRideReplayExtension : KarooExtension(EXTENSION_ID, BuildConfig.VERSIO
     private var mockLocation: MockLocationProvider? = null
     private var commandReceiver: AdbCommandReceiver? = null
 
-    override val types: List<DataTypeImpl> = emptyList()
+    override val types: List<DataTypeImpl> = listOf(ReplayDataType(this))
 
     override fun onCreate() {
         super.onCreate()
@@ -111,6 +114,39 @@ class KarooRideReplayExtension : KarooExtension(EXTENSION_ID, BuildConfig.VERSIO
         // Load on Main, like the picker does: the engine's ride fields are plain
         // vars, so two loads on different threads could interleave two rides.
         withContext(Dispatchers.Main) { replayEngine.load(records, file.absolutePath) }
+    }
+
+    /** Start or resume the loaded ride and arm mock GPS. Returns false if no ride is loaded. */
+    fun play(): Boolean {
+        if (replayEngine.currentRecord.value == null) return false
+        replayEngine.play()
+        armMockLocation()
+        return true
+    }
+
+    /** Pause playback without disarming mock GPS, preserving the UI's pause semantics. */
+    fun pause() = replayEngine.pause()
+
+    /** Pause a playing replay, or start any other loaded replay state. */
+    fun togglePlayPause() {
+        if (replayEngine.state.value == ReplayEngine.State.PLAYING) pause() else play()
+    }
+
+    /** Advance to the next standard playback multiplier, wrapping after 10×. */
+    fun cycleSpeed() {
+        replayEngine.setSpeed(nextSpeed(replayEngine.playbackSpeed.value))
+    }
+
+    /** Seek by [deltaSeconds], clamped to the loaded ride. No-op without a ride. */
+    fun skip(deltaSeconds: Long) {
+        if (replayEngine.currentRecord.value == null) return
+        replayEngine.seek(
+            skipTarget(
+                replayEngine.elapsedSeconds.value,
+                deltaSeconds,
+                replayEngine.totalSeconds,
+            ),
+        )
     }
 
     /** Install mock GPS + start streaming. Called by the UI when a replay starts. */

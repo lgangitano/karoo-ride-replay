@@ -9,8 +9,13 @@ permission). Each command answers with the replay state on the broadcast result 
 LOAD answers once the ride is parsed. The UI follows rides loaded over adb. Branch
 `feat/adb-control`; README "Scripting over adb" section written.
 
-### Data fields to pause, play and change speed from the ride screen (issue #4)
-Next after #5.
+### Ride-screen Replay field (issue #4) — built, awaiting on-device check
+One adaptive **Replay** data field. Full width: a control bar (‹ 10s, play/pause, 10s ›,
+elapsed + state, speed — each its own tap target). Half width: elapsed, state and speed;
+tap toggles play/pause. Developer tool, so no on-bike button actions. Branch
+`feat/ride-data-fields`, stacked on `feat/adb-control`. Open question for the device: do
+taps on a custom field (and on its child views) reach the extension — evidence says yes on
+Karoo 3; Karoo 2 unknown.
 
 ## Shipped
 

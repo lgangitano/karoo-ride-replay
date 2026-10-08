@@ -67,6 +67,15 @@ The app is two screens — **Select Ride** and **Replay** — styled to match Ka
 7. **To ride** — the full-width bar minimizes to the Karoo's normal ride view while playback keeps streaming (mock GPS stays active), so your other extensions see real-looking sensor + GPS data — and you can record a ride against the replay.
 8. **Back** — the bottom-left chevron (or the hardware back button) returns to the picker; playback pauses and keeps its position (so re-selecting the ride resumes where you left off), and mock GPS is released so the Karoo returns to its real GPS.
 
+## Controls on the ride screen
+
+To pause, skip or change speed without leaving the ride screen, for example while you watch another extension's data field react, add the **Replay** data field to a ride page (edit the page, then pick it from the Ride Replay extension).
+
+- **Full-width field:** a control bar with `‹ 10s`, play/pause, `10s ›`, the elapsed replay time, and the speed. Tap the speed to step through 1× → 2× → 5× → 10×.
+- **Half-width field:** the elapsed time, state and speed. Tap anywhere on it to play or pause.
+
+Playing from the field turns on mock GPS just like the Play button in the app. Pausing keeps mock GPS on, so the position holds where you stopped.
+
 ## Scripting over adb
 
 You can drive a replay from a laptop, so extension tests are scriptable and repeatable. The Karoo 2 has adb on out of the box; on a Karoo 3, turn on developer mode first.
@@ -114,6 +123,7 @@ The commands are accepted only from adb and the system. Other apps on the Karoo 
 - **Virtual sensor devices** — one each for Power, Heart Rate, Cadence, Speed via the `karoo-ext` Device API
 - **Sensor dropout simulation** — tap a sensor to set it searching or missing while the others keep streaming
 - **Variable playback speed** — 1× / 2× / 5× / 10×
+- **Ride-screen controls** — a Replay data field with play/pause, ±10 s and speed controls, so you never leave the ride screen
 - **Scriptable over adb** — load, play, pause, seek, set the speed and read the state from a laptop ([details](#scripting-over-adb))
 - **State survives round-trips** — reopening from the Extensions list (single-instance, so Open resumes rather than restarts), or backing out and re-selecting a ride, resumes in place
 
@@ -129,6 +139,7 @@ The commands are accepted only from adb and the system. Other apps on the Karoo 
 - `vdevice/` — virtual sensor Devices (KPower pattern × 4)
 - `mocklocation/` — Android `LocationManager` mock-provider integration
 - `remote/` — the adb command receiver and its parsing
+- `fields/` — the ride-screen data fields and their tap receiver
 - `ui/` — Compose ride selector + merged replay/playback control, themed to the Karoo Visual Data Field System (`ui/theme/`)
 
 ## Build from source

@@ -9,16 +9,8 @@ import java.util.Locale
 // convention is dot decimals.
 private val DATA_LOCALE = Locale.US
 
-/** `12.3` — one-decimal data readout (speed strip, speed multiplier). */
+/** `12.3` — one-decimal data readout (speed strip, ride distance). */
 internal fun formatOneDecimal(value: Double): String = "%.1f".format(DATA_LOCALE, value)
-
-/** `1:24:35` — the timeline / hero clock form. */
-internal fun formatHHMMSS(totalSeconds: Long): String {
-    val h = totalSeconds / 3600
-    val m = (totalSeconds % 3600) / 60
-    val s = totalSeconds % 60
-    return "%d:%02d:%02d".format(DATA_LOCALE, h, m, s)
-}
 
 /** `Mon 12 Aug · 12:03` — the ride row's human write-time (primary line). */
 internal fun formatWriteTime(epochMs: Long): String =

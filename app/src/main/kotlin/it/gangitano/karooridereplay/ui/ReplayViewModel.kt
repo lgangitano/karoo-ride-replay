@@ -273,13 +273,12 @@ class ReplayViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun play() {
-        engine()?.play()
         // Arm mock GPS only once a replay is actually playing (not at service
         // startup): registration succeeds after the user has set this app as the
         // mock-location app, and real GPS is used whenever nothing is replaying.
-        KarooRideReplayExtension.instance?.armMockLocation()
+        KarooRideReplayExtension.instance?.play()
     }
-    fun pause() { engine()?.pause() }
+    fun pause() { KarooRideReplayExtension.instance?.pause() }
 
     /**
      * Leave the replay: pause (keeping position for reopen-in-place) and disarm
@@ -288,8 +287,10 @@ class ReplayViewModel(app: Application) : AndroidViewModel(app) {
      * the sensors while the rider records a ride.
      */
     fun exitReplay() {
-        engine()?.pause()
-        KarooRideReplayExtension.instance?.disarmMockLocation()
+        KarooRideReplayExtension.instance?.let { extension ->
+            extension.pause()
+            extension.disarmMockLocation()
+        }
     }
 
     fun seek(seconds: Long) { engine()?.seek(seconds) }

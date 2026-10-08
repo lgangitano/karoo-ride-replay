@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import it.gangitano.karooridereplay.data.FitFileRepository.FitFileEntry
+import it.gangitano.karooridereplay.fields.formatHHMMSS
 import it.gangitano.karooridereplay.ui.theme.Karoo
 import it.gangitano.karooridereplay.ui.theme.KarooIcons
 

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/field_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="end|center_vertical"
+    android:orientation="vertical"
+    android:paddingHorizontal="4dp">
+
+    <LinearLayout
+        android:id="@+id/field_content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- android:tint, not app:tint: the ride app inflates this RemoteViews
+                 layout as a plain ImageView, where AppCompat's app:tint does nothing. -->
+            <ImageView
+                android:id="@+id/field_state_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="6dp"
+                android:contentDescription="@string/field_replay_state_icon"
+                android:src="@drawable/ic_field_play"
+                android:tint="@color/field_text"
+                tools:ignore="UseAppTint" />
+
+            <TextView
+                android:id="@+id/field_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:singleLine="true"
+                android:textColor="@color/field_text" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/field_secondary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            android:singleLine="true"
+            android:textColor="@color/field_text" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/field_no_ride"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:includeFontPadding="false"
+        android:singleLine="true"
+        android:text="@string/field_no_ride"
+        android:textColor="@color/field_icon_grey"
+        android:visibility="gone" />
+
+</LinearLayout>

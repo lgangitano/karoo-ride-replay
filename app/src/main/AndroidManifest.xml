@@ -43,6 +43,11 @@
             </intent-filter>
         </activity>
 
+        <!-- Explicit PendingIntents from our RemoteViews are the only entry point. -->
+        <receiver
+            android:name=".fields.FieldTapReceiver"
+            android:exported="false" />
+
         <!-- Karoo extension service — host for the virtual sensor Devices
              (POWER, HEART_RATE, CADENCE, SPEED) the simulator publishes during
              playback. -->
