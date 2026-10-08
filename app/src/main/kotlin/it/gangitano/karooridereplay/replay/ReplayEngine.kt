@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
  *   - [seek] jumps to an elapsed-seconds offset from ride start (Luigi's 2b).
  *   - [setSpeed] adjusts playback multiplier (1×, 2×, 5×, 10×, …).
  *   - [currentRecord], [state], [elapsedSeconds] are observable.
+ *   - [loadedPath] identifies the file backing the active ride, when known.
  *   - [sensorStates] / [cycleSensorState] simulate per-sensor dropouts;
  *     [load] resets every sensor to streaming.
  *
@@ -50,6 +51,11 @@ class ReplayEngine {
 
     private val _playbackSpeed = MutableStateFlow(1.0)
     val playbackSpeed: StateFlow<Double> = _playbackSpeed.asStateFlow()
+
+    private val _loadedPath = MutableStateFlow<String?>(null)
+
+    /** Absolute source path of the loaded ride, or null when it has no source. */
+    val loadedPath: StateFlow<String?> = _loadedPath.asStateFlow()
 
     /** Bookmark times (elapsed seconds from ride start), ascending as added. */
     private val _markers = MutableStateFlow<List<Long>>(emptyList())
@@ -77,8 +83,8 @@ class ReplayEngine {
     val totalSeconds: Long
         get() = if (samples.isEmpty()) 0L else (rideEndMs - rideStartMs) / 1000L
 
-    /** Load a new ride. Resets state to IDLE, current record to the first sample. */
-    fun load(records: List<FitRecord>) {
+    /** Load a new ride and optional [source]. Resets state to IDLE at the first sample. */
+    fun load(records: List<FitRecord>, source: String? = null) {
         playbackJob?.cancel()
         playbackJob = null
         samples = records
@@ -99,6 +105,9 @@ class ReplayEngine {
         _loop.value = false
         // Sensor dropouts are per-ride too; a fresh ride starts all-streaming.
         _sensorStates.value = ALL_STREAMING
+        // Publish the source last: observers use this emission as the signal
+        // that all other state for the newly-loaded ride is ready to read.
+        _loadedPath.value = if (records.isEmpty()) null else source
     }
 
     /**

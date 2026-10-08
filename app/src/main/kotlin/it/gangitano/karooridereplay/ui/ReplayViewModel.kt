@@ -14,10 +14,16 @@ import it.gangitano.karooridereplay.replay.Sensor
 import it.gangitano.karooridereplay.replay.SensorState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -32,6 +38,7 @@ import java.io.File
  * extension isn't running (e.g., during cold boot before the service binds),
  * state-flow getters fall back to inert defaults so the UI never NPEs.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class ReplayViewModel(app: Application) : AndroidViewModel(app) {
 
     private val parser = FitParser()
@@ -85,6 +92,11 @@ class ReplayViewModel(app: Application) : AndroidViewModel(app) {
     val loadStatus: StateFlow<LoadStatus> = _loadStatus.asStateFlow()
     private var loadJob: Job? = null
 
+    private val _externalLoads = MutableSharedFlow<String>(extraBufferCapacity = 1)
+
+    /** Ride paths loaded outside the picker, used to open playback automatically. */
+    val externalLoads: SharedFlow<String> = _externalLoads.asSharedFlow()
+
     private fun engine(): ReplayEngine? = KarooRideReplayExtension.instance?.replayEngine
 
     init {
@@ -94,29 +106,56 @@ class ReplayViewModel(app: Application) : AndroidViewModel(app) {
         // truth; this restores the UI's view of it so the ride/playback survive
         // the round-trip instead of resetting to an empty picker.
         restoreActiveRide()
+        viewModelScope.launch {
+            KarooRideReplayExtension.instanceFlow
+                .filterNotNull()
+                .flatMapLatest { it.replayEngine.loadedPath }
+                .collect { reconcileLoadedRide(it) }
+        }
     }
 
     /** True when the engine still holds a loaded ride and we know which file it was. */
     fun hasActiveRide(): Boolean =
-        (engine()?.totalSeconds ?: 0L) > 0L && lastSelectedRidePath != null
+        (engine()?.totalSeconds ?: 0L) > 0L && engine()?.loadedPath?.value != null
 
     private fun restoreActiveRide() {
         val eng = engine() ?: return
         if (eng.totalSeconds <= 0L) return
-        val path = lastSelectedRidePath ?: return
+        val path = eng.loadedPath.value ?: return
         val file = File(path)
         if (!file.exists()) return
-        _selectedRide.value = FitFileEntry(
-            file = file,
-            displayName = file.nameWithoutExtension,
-            sizeBytes = file.length(),
-            modifiedMs = file.lastModified(),
-        )
+        _selectedRide.value = fitFileEntry(file)
         _loadStatus.value = LoadStatus.Loaded(
             totalSeconds = eng.totalSeconds,
             ridePath = path,
         )
     }
+
+    private fun reconcileLoadedRide(path: String?) {
+        if (path == null) return
+        val eng = engine() ?: return
+        if (_selectedRide.value?.file?.absolutePath == path) {
+            // The picker load publishes loadedPath before its coroutine finishes;
+            // cancelling that job here would cancel our own successful load.
+            _loadStatus.value = LoadStatus.Loaded(eng.totalSeconds, path)
+            return
+        }
+
+        // A different engine path can only have arrived outside this ViewModel
+        // (currently adb). It supersedes any picker parse still in flight.
+        loadJob?.cancel()
+        val file = File(path)
+        _selectedRide.value = fitFileEntry(file)
+        _loadStatus.value = LoadStatus.Loaded(eng.totalSeconds, path)
+        _externalLoads.tryEmit(path)
+    }
+
+    private fun fitFileEntry(file: File): FitFileEntry = FitFileEntry(
+        file = file,
+        displayName = file.nameWithoutExtension,
+        sizeBytes = file.length(),
+        modifiedMs = file.lastModified(),
+    )
 
     // Inert defaults for when the extension service hasn't started yet (cold
     // boot before the service binds). Single stable instances: minting a fresh
@@ -164,7 +203,7 @@ class ReplayViewModel(app: Application) : AndroidViewModel(app) {
         // Re-selecting the ride that's already loaded must NOT reset playback to
         // 0:00 — reopen it in place (preserving position/state). Only a different
         // ride triggers a fresh parse + load.
-        if (ridePath == lastSelectedRidePath && eng != null && eng.totalSeconds > 0L) {
+        if (eng != null && ridePath == eng.loadedPath.value && eng.totalSeconds > 0L) {
             _selectedRide.value = entry
             _loadStatus.value = LoadStatus.Loaded(eng.totalSeconds, ridePath)
             return
@@ -172,12 +211,11 @@ class ReplayViewModel(app: Application) : AndroidViewModel(app) {
         loadJob?.cancel()
         _selectedRide.value = entry
         _loadStatus.value = LoadStatus.Loading
-        lastSelectedRidePath = ridePath
         loadJob = viewModelScope.launch {
             try {
                 val records = withContext(Dispatchers.IO) { parser.parse(entry.file) }
                 if (_selectedRide.value?.file?.absolutePath != ridePath) return@launch
-                engine()?.load(records)
+                engine()?.load(records, ridePath)
                 val total = if (records.isEmpty()) 0L
                     else (records.last().timestampMs - records.first().timestampMs) / 1000L
                 _loadStatus.value = LoadStatus.Loaded(total, ridePath)
@@ -262,14 +300,6 @@ class ReplayViewModel(app: Application) : AndroidViewModel(app) {
     fun cycleSensorState(sensor: Sensor) { engine()?.cycleSensorState(sensor) }
 
     companion object {
-        /**
-         * The last ride the user selected, kept in a process-lifetime static so a
-         * freshly-created ViewModel can recover it. The engine persists in the
-         * extension service for as long as the process lives; so does this. If the
-         * process dies the engine dies too, so there is nothing to restore anyway.
-         */
-        private var lastSelectedRidePath: String? = null
-
         /** SharedPreferences file + key for the durable set of starred ride paths. */
         private const val PREFS_STARRED = "ride_replay_starred"
         private const val KEY_PATHS = "starred_paths"
