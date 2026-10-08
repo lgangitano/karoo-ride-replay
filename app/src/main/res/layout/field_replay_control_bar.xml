@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/field_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="end|center_vertical"
+    android:orientation="horizontal">
+
+    <LinearLayout
+        android:id="@+id/field_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:baselineAligned="false"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/field_skip_back"
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:singleLine="true"
+            android:textColor="@color/field_text"
+            android:textSize="12sp" />
+
+        <!-- android:tint, not app:tint: the ride app inflates this RemoteViews
+             layout as a plain ImageView, where AppCompat's app:tint does nothing. -->
+        <ImageView
+            android:id="@+id/field_state_icon"
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/field_replay_state_icon"
+            android:padding="8dp"
+            android:src="@drawable/ic_field_play"
+            android:tint="@color/field_text"
+            tools:ignore="UseAppTint" />
+
+        <TextView
+            android:id="@+id/field_skip_forward"
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:singleLine="true"
+            android:textColor="@color/field_text"
+            android:textSize="12sp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="end|center_vertical"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/field_value"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:gravity="end"
+                android:includeFontPadding="false"
+                android:singleLine="true"
+                android:textColor="@color/field_text" />
+
+            <TextView
+                android:id="@+id/field_secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:includeFontPadding="false"
+                android:singleLine="true"
+                android:textColor="@color/field_text" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/field_speed"
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:singleLine="true"
+            android:textColor="@color/field_text" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/field_no_ride"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:includeFontPadding="false"
+        android:singleLine="true"
+        android:text="@string/field_no_ride"
+        android:textColor="@color/field_icon_grey"
+        android:visibility="gone" />
+
+</LinearLayout>

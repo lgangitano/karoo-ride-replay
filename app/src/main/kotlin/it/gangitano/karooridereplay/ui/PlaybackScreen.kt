@@ -42,15 +42,19 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import it.gangitano.karooridereplay.fields.SPEED_STEPS
+import it.gangitano.karooridereplay.fields.SKIP_SECONDS
+import it.gangitano.karooridereplay.fields.STEP_BACK_LABEL
+import it.gangitano.karooridereplay.fields.STEP_FORWARD_LABEL
+import it.gangitano.karooridereplay.fields.formatHHMMSS
+import it.gangitano.karooridereplay.fields.formatSpeed
+import it.gangitano.karooridereplay.fields.skipTarget
 import it.gangitano.karooridereplay.replay.ReplayEngine
 import it.gangitano.karooridereplay.replay.Sensor
 import it.gangitano.karooridereplay.replay.SensorState
 import it.gangitano.karooridereplay.ui.theme.Karoo
 import it.gangitano.karooridereplay.ui.theme.KarooIcons
 import kotlin.math.roundToLong
-
-internal const val STEP_BACK_LABEL = "‹ 10s"
-internal const val STEP_FORWARD_LABEL = "10s ›"
 
 /**
  * The merged Replay screen (playback control + the former Configure step).
@@ -144,7 +148,9 @@ fun PlaybackScreen(viewModel: ReplayViewModel, onBack: () -> Unit) {
                 KarooPill(
                     label = STEP_BACK_LABEL,
                     icon = null,
-                    onClick = { viewModel.seek((elapsedSeconds - 10).coerceAtLeast(0)) },
+                    onClick = {
+                        viewModel.seek(skipTarget(elapsedSeconds, -SKIP_SECONDS, totalSeconds))
+                    },
                     color = Karoo.Grey1,
                     fontSize = 14,
                     heightDp = 38,
@@ -173,7 +179,9 @@ fun PlaybackScreen(viewModel: ReplayViewModel, onBack: () -> Unit) {
                 }
                 KarooPill(
                     label = STEP_FORWARD_LABEL,
-                    onClick = { viewModel.seek((elapsedSeconds + 10).coerceAtMost(totalSeconds)) },
+                    onClick = {
+                        viewModel.seek(skipTarget(elapsedSeconds, SKIP_SECONDS, totalSeconds))
+                    },
                     color = Karoo.Grey1,
                     fontSize = 14,
                     heightDp = 38,
@@ -214,9 +222,9 @@ fun PlaybackScreen(viewModel: ReplayViewModel, onBack: () -> Unit) {
             // Speed
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text("SPEED", style = Karoo.sectionLabel.copy(fontSize = 13.sp))
-                listOf(1.0, 2.0, 5.0, 10.0).forEach { mult ->
+                SPEED_STEPS.forEach { mult ->
                     KarooTag(
-                        label = "${mult.toInt()}×",
+                        label = formatSpeed(mult),
                         selected = playbackSpeed == mult,
                         onClick = { viewModel.setSpeed(mult) },
                     )
@@ -461,6 +469,3 @@ internal fun isPlaybackReady(
     selectedRidePath: String?,
 ): Boolean = loadStatus is ReplayViewModel.LoadStatus.Loaded &&
     loadStatus.ridePath == selectedRidePath
-
-private fun formatSpeed(speed: Double): String =
-    if (speed == speed.toLong().toDouble()) "${speed.toLong()}×" else "${formatOneDecimal(speed)}×"

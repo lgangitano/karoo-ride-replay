@@ -71,16 +71,14 @@ class AdbCommandReceiver(
                 }
             }
             AdbCommand.Play -> {
-                if (engine.currentRecord.value == null) {
+                if (!extension.play()) {
                     replyError(action, "no ride loaded", ordered)
                     return
                 }
-                engine.play()
-                extension.armMockLocation()
                 replySuccess(action, ordered)
             }
             AdbCommand.Pause -> {
-                engine.pause()
+                extension.pause()
                 replySuccess(action, ordered)
             }
             is AdbCommand.Seek -> {
@@ -97,7 +95,7 @@ class AdbCommandReceiver(
             }
             AdbCommand.Status -> replySuccess(action, ordered)
             AdbCommand.Exit -> {
-                engine.pause()
+                extension.pause()
                 extension.disarmMockLocation()
                 replySuccess(action, ordered)
             }
