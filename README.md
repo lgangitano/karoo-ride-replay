@@ -73,7 +73,7 @@ You can drive a replay from a laptop, so extension tests are scriptable and repe
 
 ```bash
 adb shell am broadcast -a it.gangitano.karooridereplay.LOAD   --es file FitFiles/ride.fit
-adb shell am broadcast -a it.gangitano.karooridereplay.SPEED  --ed multiplier 10
+adb shell am broadcast -a it.gangitano.karooridereplay.SPEED  --ef multiplier 10
 adb shell am broadcast -a it.gangitano.karooridereplay.PLAY
 adb shell am broadcast -a it.gangitano.karooridereplay.SEEK   --el seconds 1800
 adb shell am broadcast -a it.gangitano.karooridereplay.PAUSE
@@ -91,7 +91,7 @@ adb shell am broadcast -a it.gangitano.karooridereplay.EXIT
 | `STATUS` | — | Changes nothing; just answers |
 | `EXIT` | — | Pauses and releases mock GPS, like Back |
 
-Numbers can be passed with any of `--ei`, `--el`, `--ef`, `--ed` or `--es`. Every command answers on the `am broadcast` result line with the state after the command:
+Numbers can be passed with `--ei`, `--el`, `--ef` or `--es`. (`--ed` works too where `am` supports it, but the Karoo 3's Android 12 doesn't.) Every command answers on the `am broadcast` result line with the state after the command:
 
 ```
 Broadcast completed: result=-1, data="state=PLAYING elapsed=1800 total=5018 speed=10.0 file=/storage/emulated/0/FitFiles/ride.fit"
