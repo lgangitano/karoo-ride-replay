@@ -67,6 +67,40 @@ The app is two screens — **Select Ride** and **Replay** — styled to match Ka
 7. **To ride** — the full-width bar minimizes to the Karoo's normal ride view while playback keeps streaming (mock GPS stays active), so your other extensions see real-looking sensor + GPS data — and you can record a ride against the replay.
 8. **Back** — the bottom-left chevron (or the hardware back button) returns to the picker; playback pauses and keeps its position (so re-selecting the ride resumes where you left off), and mock GPS is released so the Karoo returns to its real GPS.
 
+## Scripting over adb
+
+You can drive a replay from a laptop, so extension tests are scriptable and repeatable. The Karoo 2 has adb on out of the box; on a Karoo 3, turn on developer mode first.
+
+```bash
+adb shell am broadcast -a it.gangitano.karooridereplay.LOAD   --es file FitFiles/ride.fit
+adb shell am broadcast -a it.gangitano.karooridereplay.SPEED  --ed multiplier 10
+adb shell am broadcast -a it.gangitano.karooridereplay.PLAY
+adb shell am broadcast -a it.gangitano.karooridereplay.SEEK   --el seconds 1800
+adb shell am broadcast -a it.gangitano.karooridereplay.PAUSE
+adb shell am broadcast -a it.gangitano.karooridereplay.STATUS
+adb shell am broadcast -a it.gangitano.karooridereplay.EXIT
+```
+
+| Action | Extra | What it does |
+|---|---|---|
+| `LOAD` | `file` — absolute path, or relative to the storage root (`FitFiles/…`, `Download/…`) | Loads the ride and answers once it's parsed, so the next command can follow straight away |
+| `PLAY` | — | Starts or resumes playback and turns on mock GPS, like the Play button |
+| `PAUSE` | — | Pauses, keeping the position |
+| `SEEK` | `seconds` — elapsed time from the start of the ride | Jumps there, keeping play/pause state |
+| `SPEED` | `multiplier` — any value from 0.1 to 100 | Sets the playback speed |
+| `STATUS` | — | Changes nothing; just answers |
+| `EXIT` | — | Pauses and releases mock GPS, like Back |
+
+Numbers can be passed with any of `--ei`, `--el`, `--ef`, `--ed` or `--es`. Every command answers on the `am broadcast` result line with the state after the command:
+
+```
+Broadcast completed: result=-1, data="state=PLAYING elapsed=1800 total=5018 speed=10.0 file=/storage/emulated/0/FitFiles/ride.fit"
+```
+
+`result=-1` means success. `result=1` is an error, with the reason in `data` (`error: …`). `result=0` with no data means nothing received the command; check that Ride Replay is installed and the Karoo has started its extensions.
+
+The commands are accepted only from adb and the system. Other apps on the Karoo can't send them.
+
 ## Features (v1.0.0)
 
 - **Karoo-native UI** — the Hammerhead Visual Data Field System (pure-black, mono numerals, pill controls), one pane, no scrolling
@@ -80,6 +114,7 @@ The app is two screens — **Select Ride** and **Replay** — styled to match Ka
 - **Virtual sensor devices** — one each for Power, Heart Rate, Cadence, Speed via the `karoo-ext` Device API
 - **Sensor dropout simulation** — tap a sensor to set it searching or missing while the others keep streaming
 - **Variable playback speed** — 1× / 2× / 5× / 10×
+- **Scriptable over adb** — load, play, pause, seek, set the speed and read the state from a laptop ([details](#scripting-over-adb))
 - **State survives round-trips** — reopening from the Extensions list (single-instance, so Open resumes rather than restarts), or backing out and re-selecting a ride, resumes in place
 
 ### Planned
@@ -93,6 +128,7 @@ The app is two screens — **Select Ride** and **Replay** — styled to match Ka
 - `replay/` — FIT parser (Garmin official SDK) + playback engine (coroutine-driven, emits at FIT-recorded timing × speed multiplier)
 - `vdevice/` — virtual sensor Devices (KPower pattern × 4)
 - `mocklocation/` — Android `LocationManager` mock-provider integration
+- `remote/` — the adb command receiver and its parsing
 - `ui/` — Compose ride selector + merged replay/playback control, themed to the Karoo Visual Data Field System (`ui/theme/`)
 
 ## Build from source

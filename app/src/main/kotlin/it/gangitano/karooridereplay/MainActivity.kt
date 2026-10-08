@@ -90,6 +90,13 @@ class MainActivity : ComponentActivity() {
                             nav.navigate("playback") { launchSingleTop = true }
                         }
                     }
+                    // A ride loaded over adb while the app is open shows the
+                    // replay screen, the same as tapping it in the picker would.
+                    LaunchedEffect(viewModel) {
+                        viewModel.externalLoads.collect {
+                            nav.navigate("playback") { launchSingleTop = true }
+                        }
+                    }
                 }
             }
         }

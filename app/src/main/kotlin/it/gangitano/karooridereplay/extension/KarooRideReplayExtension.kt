@@ -1,7 +1,18 @@
 package it.gangitano.karooridereplay.extension
 
+import android.content.IntentFilter
+import androidx.core.content.ContextCompat
 import it.gangitano.karooridereplay.BuildConfig
 import it.gangitano.karooridereplay.mocklocation.MockLocationProvider
+import it.gangitano.karooridereplay.remote.ACTION_EXIT
+import it.gangitano.karooridereplay.remote.ACTION_LOAD
+import it.gangitano.karooridereplay.remote.ACTION_PAUSE
+import it.gangitano.karooridereplay.remote.ACTION_PLAY
+import it.gangitano.karooridereplay.remote.ACTION_SEEK
+import it.gangitano.karooridereplay.remote.ACTION_SPEED
+import it.gangitano.karooridereplay.remote.ACTION_STATUS
+import it.gangitano.karooridereplay.remote.AdbCommandReceiver
+import it.gangitano.karooridereplay.replay.FitParser
 import it.gangitano.karooridereplay.replay.ReplayEngine
 import it.gangitano.karooridereplay.vdevice.ReplayDevices
 import it.gangitano.karooridereplay.vdevice.ReplayVirtualDevice
@@ -15,7 +26,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
 
 /**
  * Karoo extension service for `ride-replay`.
@@ -43,14 +59,17 @@ class KarooRideReplayExtension : KarooExtension(EXTENSION_ID, BuildConfig.VERSIO
     val replayEngine: ReplayEngine = ReplayEngine()
 
     private val devices: ReplayDevices by lazy { ReplayDevices(extension, replayEngine) }
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val parser = FitParser()
 
     private var mockLocation: MockLocationProvider? = null
+    private var commandReceiver: AdbCommandReceiver? = null
 
     override val types: List<DataTypeImpl> = emptyList()
 
     override fun onCreate() {
         super.onCreate()
-        instance = this
+        _instanceFlow.value = this
         // Create the provider but do NOT install test providers yet. Installing
         // at startup failed silently before the app was picked as the device's
         // mock-location app and forced an app restart (issue #1); it also
@@ -58,6 +77,40 @@ class KarooRideReplayExtension : KarooExtension(EXTENSION_ID, BuildConfig.VERSIO
         // [armMockLocation] when a replay starts and [disarmMockLocation] when
         // the user exits, so real GPS is used whenever nothing is replaying.
         mockLocation = MockLocationProvider(applicationContext, replayEngine)
+
+        commandReceiver = AdbCommandReceiver(this, serviceScope).also { receiver ->
+            val filter = IntentFilter().apply {
+                addAction(ACTION_LOAD)
+                addAction(ACTION_PLAY)
+                addAction(ACTION_PAUSE)
+                addAction(ACTION_SEEK)
+                addAction(ACTION_SPEED)
+                addAction(ACTION_STATUS)
+                addAction(ACTION_EXIT)
+            }
+            // This must be dynamic: Android 8+ does not deliver these implicit
+            // broadcasts to manifest receivers, and the engine shares this
+            // service's lifetime. DUMP limits senders to the shell/system: normal
+            // apps cannot acquire its development-level grant, so the trust
+            // boundary is exactly possession of adb access.
+            ContextCompat.registerReceiver(
+                this,
+                receiver,
+                filter,
+                "android.permission.DUMP",
+                null,
+                ContextCompat.RECEIVER_EXPORTED,
+            )
+        }
+    }
+
+    /** Parse [file] off the main thread and install it as the active ride. */
+    suspend fun loadRide(file: File) {
+        val records = withContext(Dispatchers.IO) { parser.parse(file) }
+        require(records.isNotEmpty()) { "FIT file contains no records" }
+        // Load on Main, like the picker does: the engine's ride fields are plain
+        // vars, so two loads on different threads could interleave two rides.
+        withContext(Dispatchers.Main) { replayEngine.load(records, file.absolutePath) }
     }
 
     /** Install mock GPS + start streaming. Called by the UI when a replay starts. */
@@ -67,10 +120,13 @@ class KarooRideReplayExtension : KarooExtension(EXTENSION_ID, BuildConfig.VERSIO
     fun disarmMockLocation() = mockLocation?.disarm()
 
     override fun onDestroy() {
+        commandReceiver?.let(::unregisterReceiver)
+        commandReceiver = null
+        serviceScope.cancel()
         mockLocation?.destroy()
         mockLocation = null
         replayEngine.destroy()
-        instance = null
+        _instanceFlow.value = null
         super.onDestroy()
     }
 
@@ -96,12 +152,13 @@ class KarooRideReplayExtension : KarooExtension(EXTENSION_ID, BuildConfig.VERSIO
         const val EXTENSION_ID = "ride-replay"
         private const val SCAN_ANNOUNCE_DELAY_MS = 500L
 
-        /**
-         * The running extension instance. UI binds to this for play/pause/seek
-         * control. (Standard Karoo-extension singleton pattern.)
-         */
-        @Volatile
-        var instance: KarooRideReplayExtension? = null
-            private set
+        private val _instanceFlow = MutableStateFlow<KarooRideReplayExtension?>(null)
+
+        /** The running extension instance as observable service-lifecycle state. */
+        val instanceFlow: StateFlow<KarooRideReplayExtension?> = _instanceFlow.asStateFlow()
+
+        /** The running extension instance for immediate command dispatch. */
+        val instance: KarooRideReplayExtension?
+            get() = _instanceFlow.value
     }
 }

@@ -2,7 +2,15 @@
 
 ## Open
 
-_(nothing open)_
+### Control a replay over adb (issue #5) — built, awaiting on-device check
+`adb shell am broadcast -a it.gangitano.karooridereplay.{LOAD,PLAY,PAUSE,SEEK,SPEED,STATUS,EXIT}`.
+Receiver registered by the extension service, accepted only from adb/system (`DUMP`
+permission). Each command answers with the replay state on the broadcast result line;
+LOAD answers once the ride is parsed. The UI follows rides loaded over adb. Branch
+`feat/adb-control`; README "Scripting over adb" section written.
+
+### Data fields to pause, play and change speed from the ride screen (issue #4)
+Next after #5.
 
 ## Shipped
 
