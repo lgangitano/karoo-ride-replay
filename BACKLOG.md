@@ -2,22 +2,19 @@
 
 ## Open
 
-### Control a replay over adb (issue #5) — built, awaiting on-device check
-`adb shell am broadcast -a it.gangitano.karooridereplay.{LOAD,PLAY,PAUSE,SEEK,SPEED,STATUS,EXIT}`.
-Receiver registered by the extension service, accepted only from adb/system (`DUMP`
-permission). Each command answers with the replay state on the broadcast result line;
-LOAD answers once the ride is parsed. The UI follows rides loaded over adb. Branch
-`feat/adb-control`; README "Scripting over adb" section written.
-
-### Ride-screen Replay field (issue #4) — built, awaiting on-device check
-One adaptive **Replay** data field. Full width: a control bar (‹ 10s, play/pause, 10s ›,
-elapsed + state, speed — each its own tap target). Half width: elapsed, state and speed;
-tap toggles play/pause. Developer tool, so no on-bike button actions. Branch
-`feat/ride-data-fields`, stacked on `feat/adb-control`. Open question for the device: do
-taps on a custom field (and on its child views) reach the extension — evidence says yes on
-Karoo 3; Karoo 2 unknown.
+_(nothing open)_
 
 ## Shipped
+
+### Replay data field with ride-screen controls (issue #4, v1.1.0, 2026-10-08)
+One adaptive **Replay** data field. Full width: a control bar (‹ 10s, play/pause, 10s ›,
+elapsed + state, speed), each its own tap target. Half width: elapsed, state and speed;
+tap toggles play/pause. Verified on a Karoo 3 in day and night mode; Karoo 2 untested.
+
+### Control a replay over adb (issue #5, v1.1.0, 2026-10-08)
+`adb shell am broadcast -a it.gangitano.karooridereplay.{LOAD,PLAY,PAUSE,SEEK,SPEED,STATUS,EXIT}`,
+accepted only from adb/system (`DUMP`), each answering with the replay state. The app
+follows rides loaded over adb. Verified on a Karoo 3; Karoo 2 untested.
 
 ### Star favourites + idempotent reopen (2026-07-17)
 Tap the star to pin a ride to the top of the picker; pins are stored in
