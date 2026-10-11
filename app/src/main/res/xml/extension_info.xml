@@ -20,4 +20,11 @@
         icon="@drawable/ic_field_play"
         typeId="replay" />
 
+    <DataType
+        description="@string/field_grade_description"
+        displayName="@string/field_grade_name"
+        graphical="false"
+        icon="@drawable/ic_field_grade"
+        typeId="grade" />
+
 </ExtensionInfo>

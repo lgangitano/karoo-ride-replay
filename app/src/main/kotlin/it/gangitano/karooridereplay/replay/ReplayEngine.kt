@@ -87,15 +87,15 @@ class ReplayEngine {
     fun load(records: List<FitRecord>, source: String? = null) {
         playbackJob?.cancel()
         playbackJob = null
-        samples = records
-        if (records.isEmpty()) {
+        samples = GradeFill.apply(records)
+        if (samples.isEmpty()) {
             rideStartMs = 0L
             rideEndMs = 0L
             _currentRecord.value = null
         } else {
-            rideStartMs = records.first().timestampMs
-            rideEndMs = records.last().timestampMs
-            _currentRecord.value = records.first()
+            rideStartMs = samples.first().timestampMs
+            rideEndMs = samples.last().timestampMs
+            _currentRecord.value = samples.first()
         }
         currentIndex = 0
         _elapsedSeconds.value = 0L

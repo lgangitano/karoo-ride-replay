@@ -4,6 +4,7 @@ import android.content.IntentFilter
 import androidx.core.content.ContextCompat
 import it.gangitano.karooridereplay.BuildConfig
 import it.gangitano.karooridereplay.fields.ReplayDataType
+import it.gangitano.karooridereplay.fields.ReplayGradeDataType
 import it.gangitano.karooridereplay.fields.nextSpeed
 import it.gangitano.karooridereplay.fields.skipTarget
 import it.gangitano.karooridereplay.mocklocation.MockLocationProvider
@@ -61,6 +62,11 @@ class KarooRideReplayExtension : KarooExtension(EXTENSION_ID, BuildConfig.VERSIO
 
     val replayEngine: ReplayEngine = ReplayEngine()
 
+    private val _replayActive = MutableStateFlow(false)
+
+    /** A replay is open (played and not yet exited); gates the grade stream. */
+    val replayActive: StateFlow<Boolean> = _replayActive.asStateFlow()
+
     private val devices: ReplayDevices by lazy { ReplayDevices(extension, replayEngine) }
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val parser = FitParser()
@@ -68,7 +74,7 @@ class KarooRideReplayExtension : KarooExtension(EXTENSION_ID, BuildConfig.VERSIO
     private var mockLocation: MockLocationProvider? = null
     private var commandReceiver: AdbCommandReceiver? = null
 
-    override val types: List<DataTypeImpl> = listOf(ReplayDataType(this))
+    override val types: List<DataTypeImpl> = listOf(ReplayDataType(this), ReplayGradeDataType(this))
 
     override fun onCreate() {
         super.onCreate()
@@ -150,12 +156,19 @@ class KarooRideReplayExtension : KarooExtension(EXTENSION_ID, BuildConfig.VERSIO
     }
 
     /** Install mock GPS + start streaming. Called by the UI when a replay starts. */
-    fun armMockLocation() = mockLocation?.arm()
+    fun armMockLocation() {
+        mockLocation?.arm()
+        _replayActive.value = true
+    }
 
     /** Remove mock GPS so real GPS returns. Called by the UI when the replay is exited. */
-    fun disarmMockLocation() = mockLocation?.disarm()
+    fun disarmMockLocation() {
+        _replayActive.value = false
+        mockLocation?.disarm()
+    }
 
     override fun onDestroy() {
+        _replayActive.value = false
         commandReceiver?.let(::unregisterReceiver)
         commandReceiver = null
         serviceScope.cancel()

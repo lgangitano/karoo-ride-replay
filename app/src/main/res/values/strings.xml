@@ -3,6 +3,8 @@
     <string name="app_name">Karoo Ride Replay</string>
     <string name="extension_name">Ride Replay</string>
     <string name="field_replay_name">Replay</string>
+    <string name="field_grade_name">Replay grade</string>
+    <string name="field_grade_description">Grade of the replayed ride, in %. Shows only while a replay is open.</string>
     <string name="field_replay_description">Replay controls: play/pause, skip 10 s and speed. Use a full-width field for all controls.</string>
     <string name="field_no_ride">No ride</string>
     <string name="field_replay_state_icon">Replay state</string>

@@ -114,6 +114,26 @@ Broadcast completed: result=-1, data="state=PLAYING elapsed=1800 total=5018 spee
 
 The commands are accepted only from adb and the system. Other apps on the Karoo can't send them.
 
+## Grade for other extensions
+
+You can opt in to the replayed ride's grade through this extension's own data type, `TYPE_EXT::ride-replay::grade` (`DataType.dataTypeId("ride-replay", "grade")`). Extensions can't publish the Karoo's own grade, so this is a separate stream. You can also add it to a ride page as **Replay grade**, an ordinary numeric field.
+
+The value is grade in percent, positive uphill, with the same unit and sign as the Karoo's grade, under `DataType.Field.SINGLE` in `DataPoint.values`.
+
+The stream opens the first time you play a replay. It stays open while paused, and when you load another ride over adb, streaming the current record's grade, until you exit the replay (Back in the app, or `EXIT` over adb). An open replay with no grade available yet reports `StreamState.Searching`; otherwise it reports `StreamState.Streaming`. With no replay open, it reports `StreamState.NotAvailable`, so you can fall back to the Karoo's grade without picking up a stale replay value on a real ride.
+
+You get recorded grade when the file carries any, with the last value carried forward over gaps and leading gaps left unavailable. Spikes pass through as recorded. If the file has no recorded grade, grade is computed from altitude and distance over a trailing 50 m window (using the latest earlier record at least 50 m behind), then carried forward over gaps.
+
+```kotlin
+karooSystem.addConsumer(
+    OnStreamState.StartStreaming(DataType.dataTypeId("ride-replay", "grade")),
+) { event: OnStreamState ->
+    val grade = (event.state as? StreamState.Streaming)
+        ?.dataPoint?.values?.get(DataType.Field.SINGLE)
+    // null → use DataType.Type.ELEVATION_GRADE instead
+}
+```
+
 ## Features (v1.1.0)
 
 - **Karoo-native UI** — the Hammerhead Visual Data Field System (pure-black, mono numerals, pill controls), one pane, no scrolling
@@ -129,6 +149,7 @@ The commands are accepted only from adb and the system. Other apps on the Karoo 
 - **Variable playback speed** — 1× / 2× / 5× / 10×
 - **Ride-screen controls** — a Replay data field with play/pause, ±10 s and speed controls, so you never leave the ride screen
 - **Scriptable over adb** — load, play, pause, seek, set the speed and read the state from a laptop ([details](#scripting-over-adb))
+- **Grade for other extensions** — the replayed ride's grade as a data type other extensions can read ([details](#grade-for-other-extensions))
 - **State survives round-trips** — reopening from the Extensions list (single-instance, so Open resumes rather than restarts), or backing out and re-selecting a ride, resumes in place
 
 ### Planned
