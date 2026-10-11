@@ -44,7 +44,9 @@ class FitParser {
             timestampMs = timestampMs,
             lat = mesg.positionLat?.let(::semicirclesToDegrees),
             lng = mesg.positionLong?.let(::semicirclesToDegrees),
-            altitude = mesg.altitude?.toDouble(),
+            // Some devices write only enhanced_altitude; the SDK expands altitude
+            // into it, never the reverse, so enhanced is the field that is always set.
+            altitude = (mesg.enhancedAltitude ?: mesg.altitude)?.toDouble(),
             speed = mesg.speed?.toDouble(),
             power = mesg.power,
             heartRate = mesg.heartRate?.toInt(),

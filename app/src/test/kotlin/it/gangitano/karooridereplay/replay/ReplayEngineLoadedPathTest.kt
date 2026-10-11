@@ -20,6 +20,18 @@ class ReplayEngineLoadedPathTest {
         assertNull(engine.loadedPath.value)
     }
 
+    @Test fun `loading fills grade gaps before a seek publishes the sample`() {
+        engine.load(
+            listOf(
+                FitRecord(timestampMs = 0L, grade = 5.0),
+                FitRecord(timestampMs = 1000L),
+                FitRecord(timestampMs = 2000L, grade = -2.0),
+            ),
+        )
+        engine.seek(1L)
+        assertEquals(5.0, engine.currentRecord.value!!.grade!!, 0.0)
+    }
+
     @Test fun `loading a ride publishes its source`() {
         engine.load(ride, "/sdcard/FitFiles/a.fit")
         assertEquals("/sdcard/FitFiles/a.fit", engine.loadedPath.value)

@@ -16,7 +16,8 @@ package it.gangitano.karooridereplay.replay
  *   - heartRate:  beats per minute
  *   - cadence:    revolutions per minute
  *   - distance:   meters from ride start (cumulative)
- *   - grade:      percent (already-decoded from FIT's signed-int grade if present)
+ *   - grade:      percent: recorded grade, carried forward over gaps, or computed
+ *                 from altitude/distance when the file has none ([GradeFill] at load)
  *   - temperature:degrees Celsius
  *   - timestampMs:wall-clock milliseconds since Unix epoch (1970-01-01 UTC)
  *
