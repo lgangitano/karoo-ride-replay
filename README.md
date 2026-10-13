@@ -120,7 +120,7 @@ You can opt in to the replayed ride's grade through this extension's own data ty
 
 The value is grade in percent, positive uphill, with the same unit and sign as the Karoo's grade, under `DataType.Field.SINGLE` in `DataPoint.values`.
 
-The stream opens the first time you play a replay. It stays open while paused, and when you load another ride over adb, streaming the current record's grade, until you exit the replay (Back in the app, or `EXIT` over adb). An open replay with no grade available yet reports `StreamState.Searching`; otherwise it reports `StreamState.Streaming`. With no replay open, it reports `StreamState.NotAvailable`, so you can fall back to the Karoo's grade without picking up a stale replay value on a real ride.
+The stream opens the first time you play a replay and sends one value per replayed record, even when the grade doesn't change, so you can judge freshness by sample age. It stays open while paused, and when you load another ride over adb, until you exit the replay (Back in the app, or `EXIT` over adb). A paused replay sends no new values. An open replay with no grade available yet reports `StreamState.Searching`; otherwise it reports `StreamState.Streaming`. With no replay open, it reports `StreamState.NotAvailable`, so you can fall back to the Karoo's grade without picking up a stale replay value on a real ride.
 
 You get recorded grade when the file carries any, with the last value carried forward over gaps and leading gaps left unavailable. Spikes pass through as recorded. If the file has no recorded grade, grade is computed from altitude and distance over a trailing 50 m window (using the latest earlier record at least 50 m behind), then carried forward over gaps.
 
