@@ -30,7 +30,7 @@ class ReplayGradeDataType(
             try {
                 combine(service.replayActive, service.replayEngine.currentRecord) { active, record ->
                     gradeStreamState(active, record?.grade, dataTypeId)
-                }.distinctUntilChanged().collect { state ->
+                }.collect { state ->
                     emitter.onNext(state)
                 }
             } catch (e: CancellationException) {
