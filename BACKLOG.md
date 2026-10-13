@@ -6,6 +6,13 @@ _(nothing open)_
 
 ## Shipped
 
+### Replay grade for other extensions (issue #10, v1.2.0, 2026-10-13)
+The replayed ride's grade as this extension's own data type, `TYPE_EXT::ride-replay::grade`
+(percent, positive uphill, `SINGLE`), for consumers to opt in to. Streams one value per
+replayed record while a replay is open; `NotAvailable` otherwise. Recorded grade carried
+forward, or computed from altitude/distance for files without it. Also a "Replay grade"
+field (one decimal). Proposed and reviewed by @lockevod. Verified on a Karoo 3.
+
 ### Replay data field with ride-screen controls (issue #4, v1.1.0, 2026-10-08)
 One adaptive **Replay** data field. Full width: a control bar (‹ 10s, play/pause, 10s ›,
 elapsed + state, speed), each its own tap target. Half width: elapsed, state and speed;

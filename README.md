@@ -6,7 +6,7 @@ Open-source ride-simulation extension for Hammerhead Karoo cycling computers. Re
   <img src="docs/playback-screen.png" alt="Karoo Ride Replay — Playback screen" width="320" />
 </p>
 
-> Status: v1.1.0. Karoo-native UI, mock GPS scoped to active replays, per-sensor virtual devices with dropout simulation, a Replay data field with ride-screen controls, and control over adb.
+> Status: v1.2.0. Karoo-native UI, mock GPS scoped to active replays, per-sensor virtual devices with dropout simulation, a Replay data field with ride-screen controls, control over adb, and the replayed grade for other extensions.
 
 ## Why
 
@@ -134,7 +134,7 @@ karooSystem.addConsumer(
 }
 ```
 
-## Features (v1.1.0)
+## Features (v1.2.0)
 
 - **Karoo-native UI** — the Hammerhead Visual Data Field System (pure-black, mono numerals, pill controls), one pane, no scrolling
 - **Ride library** — scans Karoo's `FitFiles/`, leads with write-time + parsed duration/distance/size, hides near-empty recordings
